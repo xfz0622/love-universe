@@ -1,0 +1,18 @@
+{
+  "profile": {
+    "name": "用户1"
+  },
+  "travels": [
+    {
+      "id": "t1",
+      "title": "巴黎之旅",
+      "date": "2026-07-01"
+    }
+  ],
+  "anniversaries": [],
+  "foods": [],
+  "shopping": [],
+  "ledger": [],
+  "inspiration": [],
+  "version": 2
+}

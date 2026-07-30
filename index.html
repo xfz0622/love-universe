@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#FFF5F5">
+  <meta name="description" content="恋爱小宇宙 - 情侣双人协同记录工作台">
+  <title>恋爱小宇宙</title>
+
+  <!-- iOS PWA（添加到主屏幕后全屏运行） -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="恋爱小宇宙">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./assets/icon-512.png">
+
+  <!-- Android/通用 PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- 字体预加载：优先用 Google Fonts，超时自动降级为系统黑体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all';document.documentElement.classList.add('fonts-loaded');this.onload=null">
+  <!-- 字体加载超时降级：3秒后强制使用系统字体 -->
+  <script>
+    (function(){var t=setTimeout(function(){var s=document.querySelector('link[href*="fonts.googleapis.com"]');if(s){s.media='all';s.onload=null;}},3000);window.addEventListener('load',function(){clearTimeout(t)});})();
+  </script>
+  <!-- 系统字体兜底：在 Google Fonts 加载前使用 -->
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+    .fonts-loaded body { font-family: "Noto Sans SC", "Inter", -apple-system, sans-serif; }
+  </style>
+
+  <!-- 样式 -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/games.css">
+
+  <style>
+    /* ===== 底部导航栏 ===== */
+    .navbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: var(--max-width);
+      height: var(--navbar-height);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: var(--space-xs) var(--space-sm);
+      padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom));
+      z-index: var(--z-sticky);
+      box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: var(--space-xs) 2px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      min-width: 0;
+      flex: 1;
+      position: relative;
+      white-space: nowrap;
+    }
+    .nav-tab::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2.5px;
+      border-radius: 2px;
+      background: currentColor;
+      transition: width var(--transition-base);
+    }
+    .nav-tab.active::after {
+      width: 18px;
+    }
+    .nav-tab-label {
+      font-size: 10px;
+      font-weight: var(--weight-semibold);
+      line-height: 1;
+      font-family: var(--font-sans);
+      white-space: nowrap;
+      transform: scale(0.88);
+      letter-spacing: 0.02em;
+    }
+    .nav-tab:hover {
+      opacity: 0.85;
+    }
+    .nav-tab:active {
+      transform: scale(0.94);
+    }
+
+    /* ===== 响应式 ===== */
+    @media (min-width: 481px) {
+      .app-container {
+        border-left: 1px solid var(--border-light);
+        border-right: 1px solid var(--border-light);
+      }
+    }
+
+    @media (max-width: 360px) {
+      :root {
+        --content-padding: 0.75rem;
+      }
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-title {
+        font-size: var(--text-lg);
+      }
+    }
+
+    /* ===== 登录页 ===== */
+    .login-page {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+      background: #fff;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      padding: var(--space-2xl) var(--space-xl);
+      background: #fff;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 2px 24px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border-light);
+    }
+    .login-doodle {
+      margin-bottom: var(--space-lg);
+    }
+    .login-couple-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 0 auto;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      cursor: pointer;
+      position: relative;
+      transition: all var(--transition-fast);
+    }
+    .login-couple-photo:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .login-couple-photo .photo-change-hint {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 10px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      font-family: var(--font-sans);
+    }
+    .login-couple-photo:hover .photo-change-hint {
+      opacity: 1;
+    }
+    .login-couple-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .login-label {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: var(--weight-medium);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--color-text-light);
+      margin-bottom: var(--space-xs);
+    }
+    .login-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: var(--weight-bold);
+      color: var(--color-text);
+      margin: 0 0 var(--space-sm) 0;
+      letter-spacing: 0.05em;
+    }
+    .login-desc {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--color-text-light);
+      margin: 0 0 var(--space-xl) 0;
+      line-height: 1.6;
+    }
+    .login-form {
+      margin-bottom: var(--space-md);
+    }
+    .login-form .input-group {
+      margin-bottom: var(--space-md);
+    }
+    .login-input {
+      text-align: center;
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      padding: var(--space-md) var(--space-lg);
+      border-radius: 14px;
+      background: #fff;
+      border: 2px solid var(--border-color);
+      transition: all var(--transition-fast);
+    }
+    .login-input:focus {
+      border-color: var(--text-primary);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: var(--weight-semibold);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+      background: var(--text-primary);
+      color: #fff;
+    }
+    .login-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .login-error {
+      padding: var(--space-sm) var(--space-md);
+      background: #F5F5F5;
+      color: #1A1A1A;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: var(--space-md);
+      font-family: var(--font-sans);
+    }
+    .login-hint {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.5;
+      margin-top: var(--space-md);
+    }
+    .login-hint code {
+      background: #F5F5F5;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-primary);
+      font-family: var(--font-mono, monospace);
+    }
+  </style>
+
+  <!-- 骨架屏：JS 加载前显示，避免白屏 -->
+  <style>
+    #app-skeleton {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #fff;
+      transition: opacity 0.35s ease;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+    }
+    #app-skeleton.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .skeleton-heart {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 18px;
+      animation: skeleton-pulse 1.6s ease-in-out infinite;
+    }
+    .skeleton-text {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      font-size: 14px;
+      color: #D4C5C5;
+      letter-spacing: 0.08em;
+    }
+    @keyframes skeleton-pulse {
+      0%, 100% { opacity: 0.55; transform: scale(0.96); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-skeleton">
+    <svg class="skeleton-heart" viewBox="0 0 24 24" fill="none" stroke="#E8A0A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+    <div class="skeleton-text">正在进入小宇宙...</div>
+  </div>
+
+  <div class="app-container" id="app" style="display:none">
+    <!-- 由 App.render() 动态渲染 -->
+  </div>
+
+  <script>
+    // 注册 Service Worker，检测到新版本自动刷新
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // 新 SW 已就绪，刷新页面使用新版本
+              window.location.reload();
+            }
+          });
+        });
+      });
+    }
+  </script>
+
+  <!-- JS库 -->
+  <script defer src="js/lib/supabase.min.js"></script>
+  <script defer src="js/modules/config.js"></script>
+  <script defer src="js/modules/github-sync.js"></script>
+  <script defer src="js/modules/game-sync.js"></script>
+  <script defer src="js/tips.js"></script>
+  <script defer src="js/utils.js"></script>
+  <script defer src="js/sfx.js"></script>
+  <script defer src="js/auth.js"></script>
+  <script defer src="js/store.js"></script>
+  <script defer src="js/components.js"></script>
+
+  <!-- 页面模块 -->
+  <script defer src="js/pages/dashboard.js"></script>
+  <script defer src="js/pages/timeline.js"></script>
+  <script defer src="js/pages/travel.js"></script>
+  <script defer src="js/pages/food.js"></script>
+  <script defer src="js/pages/shopping.js"></script>
+  <script defer src="js/pages/ledger.js"></script>
+  <script defer src="js/pages/inspiration.js"></script>
+  <script defer src="js/pages/game.js"></script>
+
+  <!-- 应用入口 -->
+  <script defer src="js/app.js"></script>
+</body>
+</html>
