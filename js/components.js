@@ -417,6 +417,228 @@ const Components = {
   },
 
   /**
+   * 图片裁剪器 - 支持拖拽移动 + 缩放
+   * @param {File} file - 图片文件
+   * @param {Function} onCrop - 裁剪完成回调，参数为 base64 字符串
+   * @param {Object} opts - { aspectRatio: 1, outputSize: 400 }
+   */
+  showImageCropper(file, onCrop, opts = {}) {
+    const aspectRatio = opts.aspectRatio || 1;
+    const outputSize = opts.outputSize || 400;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgSrc = e.target.result;
+      this._renderCropper(imgSrc, aspectRatio, outputSize, onCrop, isMobile);
+    };
+    reader.readAsDataURL(file);
+  },
+
+  _renderCropper(imgSrc, aspectRatio, outputSize, onCrop, isMobile) {
+    const overlay = document.createElement('div');
+    overlay.className = 'cropper-overlay';
+    overlay.innerHTML = `
+      <div class="cropper-container">
+        <div class="cropper-header">
+          <span class="cropper-title">移动和缩放图片</span>
+          <button class="cropper-close">✕</button>
+        </div>
+        <div class="cropper-viewport" id="cropper-vp">
+          <img class="cropper-image" id="cropper-img" src="${imgSrc}" alt="crop">
+          <div class="cropper-mask"></div>
+        </div>
+        <div class="cropper-footer">
+          <div class="cropper-zoom-bar">
+            <span class="cropper-zoom-label">缩放</span>
+            <input type="range" class="cropper-zoom-slider" id="cropper-slider" min="0.5" max="3" step="0.01" value="1">
+          </div>
+          <div class="cropper-actions">
+            <button class="btn btn-ghost cropper-cancel">取消</button>
+            <button class="btn btn-primary cropper-confirm">确定</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const img = overlay.querySelector('#cropper-img');
+    const viewport = overlay.querySelector('#cropper-vp');
+    const slider = overlay.querySelector('#cropper-slider');
+
+    let scale = 1;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+    let startX, startY, startOffX, startOffY;
+    let lastDist = 0;
+    let imgNaturalW, imgNaturalH;
+
+    const clampOffset = () => {
+      if (!imgNaturalW || !imgNaturalH) return;
+      const vpW = viewport.clientWidth;
+      const vpH = viewport.clientHeight;
+      const w = imgNaturalW * scale;
+      const h = imgNaturalH * scale;
+      const maxX = Math.max(0, (w - vpW) / 2);
+      const maxY = Math.max(0, (h - vpH) / 2);
+      offsetX = Math.max(-maxX, Math.min(maxX, offsetX));
+      offsetY = Math.max(-maxY, Math.min(maxY, offsetY));
+    };
+
+    const updateTransform = () => {
+      clampOffset();
+      img.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+    };
+
+    const initImage = () => {
+      imgNaturalW = img.naturalWidth;
+      imgNaturalH = img.naturalHeight;
+      if (!imgNaturalW || !imgNaturalH) return;
+      // 初始缩放让图片至少覆盖视口
+      const vpW = viewport.clientWidth;
+      const vpH = viewport.clientHeight;
+      scale = Math.max(vpW / imgNaturalW, vpH / imgNaturalH);
+      if (scale < 0.5) scale = 0.5;
+      if (scale > 3) scale = 3;
+      slider.value = scale;
+      offsetX = 0;
+      offsetY = 0;
+      updateTransform();
+    };
+
+    if (img.complete) {
+      initImage();
+    } else {
+      img.onload = initImage;
+    }
+
+    // 缩放滑块
+    slider.addEventListener('input', () => {
+      scale = parseFloat(slider.value);
+      updateTransform();
+    });
+
+    // 拖拽 - 鼠标
+    viewport.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startOffX = offsetX;
+      startOffY = offsetY;
+    });
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      offsetX = startOffX + (e.clientX - startX);
+      offsetY = startOffY + (e.clientY - startY);
+      updateTransform();
+    };
+    const onMouseUp = () => { isDragging = false; };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    // 触摸
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        startOffX = offsetX;
+        startOffY = offsetY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        lastDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && isDragging) {
+        e.preventDefault();
+        offsetX = startOffX + (e.touches[0].clientX - startX);
+        offsetY = startOffY + (e.touches[0].clientY - startY);
+        updateTransform();
+      } else if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (lastDist > 0) {
+          scale *= dist / lastDist;
+          scale = Math.max(0.5, Math.min(3, scale));
+          slider.value = scale;
+          updateTransform();
+        }
+        lastDist = dist;
+      }
+    }, { passive: false });
+
+    viewport.addEventListener('touchend', () => {
+      isDragging = false;
+      lastDist = 0;
+    });
+
+    // 鼠标滚轮缩放
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      scale += e.deltaY > 0 ? -0.05 : 0.05;
+      scale = Math.max(0.5, Math.min(3, scale));
+      slider.value = scale;
+      updateTransform();
+    });
+
+    // 清理
+    const cleanup = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    // 关闭
+    const close = () => {
+      cleanup();
+      overlay.remove();
+    };
+    overlay.querySelector('.cropper-close').addEventListener('click', close);
+    overlay.querySelector('.cropper-cancel').addEventListener('click', close);
+
+    // 确认裁剪
+    overlay.querySelector('.cropper-confirm').addEventListener('click', () => {
+      cleanup();
+      const vpW = viewport.clientWidth;
+      const vpH = viewport.clientHeight;
+      const cropSize = Math.min(vpW, vpH) * 0.85;
+      const cropW = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
+      const cropH = cropSize / aspectRatio;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outputSize;
+      canvas.height = Math.round(outputSize / aspectRatio);
+      const ctx = canvas.getContext('2d');
+
+      const imgW = imgNaturalW * scale;
+      const imgH = imgNaturalH * scale;
+      const imgLeft = (vpW - imgW) / 2 + offsetX;
+      const imgTop = (vpH - imgH) / 2 + offsetY;
+      const cropLeft = (vpW - cropW) / 2;
+      const cropTop = (vpH - cropH) / 2;
+
+      const srcX = (cropLeft - imgLeft) / scale;
+      const srcY = (cropTop - imgTop) / scale;
+      const srcW = cropW / scale;
+      const srcH = cropH / scale;
+
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outputSize, Math.round(outputSize / aspectRatio));
+      const base64 = canvas.toDataURL('image/jpeg', 0.9);
+      close();
+      if (onCrop) onCrop(base64);
+    });
+  },
+
+  /**
    * 卡片依次入场动画
    */
   animateCards(container, selector = '.card, .list-item', delay = 40) {

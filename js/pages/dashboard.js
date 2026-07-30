@@ -217,18 +217,16 @@ const DashboardPage = {
     input.addEventListener('change', () => {
       const file = input.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target.result;
+      // 弹出裁剪器
+      Components.showImageCropper(file, (base64) => {
         Store.setCouplePhoto(base64);
         const img = photo.querySelector('img');
         if (img) img.src = base64;
-        // 旋转动画
         photo.classList.add('photo-updated');
         setTimeout(() => photo.classList.remove('photo-updated'), 500);
         Utils.showToast('合照已更新');
-      };
-      reader.readAsDataURL(file);
+      }, { aspectRatio: 1, outputSize: 400 });
+      input.value = ''; // 清空 input 以便重复选择同一文件
     });
   },
 

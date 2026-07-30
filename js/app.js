@@ -14,8 +14,17 @@ const App = {
       return;
     }
 
-    // 初始化数据层（从服务器同步）
-    await Store.init();
+    // 初始化数据层（从服务器同步），带兜底：失败也允许进入
+    try {
+      await Store.init();
+    } catch (e) {
+      console.error('Store 初始化失败，回退到登录页:', e);
+      sessionStorage.removeItem('love_token');
+      sessionStorage.removeItem('love_name');
+      Auth.renderLoginPage(app);
+      this._hideSkeleton();
+      return;
+    }
 
     // 注册所有页面
     this.pages = {

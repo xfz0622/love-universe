@@ -3,7 +3,7 @@ window.APP_CONFIG = {
   // GitHub 数据同步
   github: {
     owner: 'xfz0622',
-    repo: 'love-universe-data',
+    repo: 'love-universe',
     // token 分段编码，运行时拼接解码
     _tk1: 'Z2hwX1ZWdHZX',
     _tk2: 'c0FGYVNjTnJhOUJQM084U0ZaZ1VnamZIRzJzRm1HdQ==',
@@ -13,8 +13,8 @@ window.APP_CONFIG = {
     // dataFile 根据当前暗号动态生成，实现不同暗号独立数据文件
     get dataFile() {
       const hash = sessionStorage.getItem('love_token');
-      if (!hash) return 'data.json';
-      return 'data_' + hash.substring(0, 8) + '.json';
+      if (!hash) return 'data/data.json';
+      return 'data/data_' + hash.substring(0, 8) + '.json';
     },
     branch: 'main',
     apiBase: 'https://api.github.com'

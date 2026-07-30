@@ -25,7 +25,7 @@ const Auth = {
   async loadPasswords() {
     try {
       const { owner, repo, apiBase, token } = APP_CONFIG.github;
-      const resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/passwords.json`, {
+      const resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/data/passwords.json`, {
         headers: {
           'Authorization': `token ${token}`,
           'Accept': 'application/vnd.github.v3+json'
@@ -129,33 +129,47 @@ const Auth = {
     return { ok: true, message: '暗号修改成功！请用新暗号重新登录' };
   },
 
-  // 保存密码表到 GitHub
+  // 保存密码表到 GitHub（带冲突合并）
   async _savePasswords() {
     try {
       const { owner, repo, apiBase, token } = APP_CONFIG.github;
-      const data = { passwords: this._passwords };
-      const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+      const branch = APP_CONFIG.github.branch;
 
-      // 获取当前 SHA
+      // 🔒 先重新拉取最新密码表（避免并发覆盖）
+      let latestPasswords = { ...this._passwords };
       let sha = null;
       try {
-        const resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/passwords.json`, {
-          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        const resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/data/passwords.json`, {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+          cache: 'no-store'
         });
         if (resp.ok) {
           const item = await resp.json();
           sha = item.sha;
+          const binary = atob(item.content);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const decoded = new TextDecoder('utf-8').decode(bytes);
+          const remoteData = JSON.parse(decoded);
+          // 合并：远程 + 本地新增（不覆盖远程已有的）
+          latestPasswords = { ...remoteData.passwords, ...this._passwords };
         }
       } catch (e) { /* 首次创建 */ }
+
+      // 更新内存
+      this._passwords = latestPasswords;
+
+      const data = { passwords: latestPasswords };
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
 
       const body = {
         message: `🔐 更新密码表`,
         content,
-        branch: APP_CONFIG.github.branch
+        branch
       };
       if (sha) body.sha = sha;
 
-      await fetch(`${apiBase}/repos/${owner}/${repo}/contents/passwords.json`, {
+      await fetch(`${apiBase}/repos/${owner}/${repo}/contents/data/passwords.json`, {
         method: 'PUT',
         headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -379,9 +393,8 @@ const Auth = {
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target.result;
+      // 弹出裁剪器
+      Components.showImageCropper(file, (base64) => {
         localStorage.setItem('love_couple_photo', base64);
         const img = photo.querySelector('img');
         if (img) img.src = base64;
@@ -390,8 +403,8 @@ const Auth = {
         if (typeof Store !== 'undefined' && Store.setCouplePhoto) {
           Store.setCouplePhoto(base64);
         }
-      };
-      reader.readAsDataURL(file);
+      }, { aspectRatio: 1, outputSize: 400 });
+      fileInput.value = '';
     });
   }
 };

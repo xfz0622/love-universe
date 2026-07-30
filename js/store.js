@@ -86,24 +86,33 @@ const Store = {
   async init() {
     if (this._initialized) return;
 
-    // 🔄 数据迁移：旧版 key（无暗号前缀）→ 新版 key（带暗号前缀）
-    this._migrateFromLegacyKeys();
+    try {
+      // 🔄 数据迁移：旧版 key（无暗号前缀）→ 新版 key（带暗号前缀）
+      this._migrateFromLegacyKeys();
 
-    // 🚀 先用本地数据立即渲染，GitHub 同步放到后台
-    this.data = this._loadFromLocalStorage();
-    if (!this.data.profile || !this.data.profile.togetherDate) {
+      // 🚀 先用本地数据立即渲染，GitHub 同步放到后台
+      this.data = this._loadFromLocalStorage();
+      if (!this.data.profile || !this.data.profile.togetherDate) {
+        this._initDefaultData();
+      }
+      // 确保数据完整 + 自动生成内置纪念日
+      this._ensureDefaults();
+      this.saveAll();
+      this._initialized = true;
+
+      // 后台静默同步 GitHub（不阻塞渲染）
+      this._backgroundSync();
+
+      // 定期检查远程更新
+      this._startPolling();
+    } catch (e) {
+      console.error('Store.init 异常:', e);
+      // 兜底：用默认数据初始化，避免页面卡死
       this._initDefaultData();
+      this._ensureDefaults();
+      this._initialized = true;
+      throw e; // 让 App 层决定是否回退登录页
     }
-    // 确保数据完整 + 自动生成内置纪念日
-    this._ensureDefaults();
-    this.saveAll();
-    this._initialized = true;
-
-    // 后台静默同步 GitHub（不阻塞渲染）
-    this._backgroundSync();
-
-    // 定期检查远程更新
-    this._startPolling();
   },
 
   // 后台静默同步：拉取 GitHub 数据并合并
@@ -417,14 +426,23 @@ const Store = {
   },
 
   /**
-   * 从旧版 key（无暗号前缀 love_profile/love_anniversaries/...）迁移到新版 key
-   * 迁移后保留旧 key（不删除），因为同一设备可能有多个暗号的数据
-   * 每个暗号首次登录时自动迁移一次
+   * 从旧版 key 迁移到新版 key
+   * 迁移只发生一次（全局标记），给第一个登录的暗号
+   * 后续暗号不会拿到旧数据，保证隔离
    */
   _migrateFromLegacyKeys() {
+    // 全局迁移标记：只迁移一次
+    const GLOBAL_MIGRATED = 'love_migration_done_global_v2';
+    if (localStorage.getItem(GLOBAL_MIGRATED)) return;
+
     const prefix = _getPasscodePrefix();
-    const migratedFlag = prefix + 'migrated_from_legacy';
-    if (localStorage.getItem(migratedFlag)) return; // 已迁移过
+    const profileKey = prefix + 'profile';
+
+    // 如果当前暗号已经有新 key 数据（从 GitHub 同步来），跳过迁移
+    if (localStorage.getItem(profileKey)) {
+      localStorage.setItem(GLOBAL_MIGRATED, '1');
+      return;
+    }
 
     const legacyKeys = [
       'love_profile', 'love_anniversaries', 'love_travels', 'love_foods',
@@ -435,10 +453,8 @@ const Store = {
     for (const legacyKey of legacyKeys) {
       const data = localStorage.getItem(legacyKey);
       if (data !== null) {
-        // 映射到新 key: love_profile → love_<hash8>_profile
         const suffix = legacyKey.replace('love_', '');
         const newKey = prefix + suffix;
-        // 只有新 key 不存在时才迁移（避免覆盖已存在的数据）
         if (!localStorage.getItem(newKey)) {
           localStorage.setItem(newKey, data);
           migrated = true;
@@ -446,7 +462,7 @@ const Store = {
       }
     }
 
-    // 迁移其他辅助 key
+    // 迁移辅助 key
     const auxLegacy = [
       ['love_data_version', prefix + 'data_version'],
       ['love_builtin_together_date', prefix + 'builtin_together_date'],
@@ -464,8 +480,8 @@ const Store = {
     if (migrated) {
       console.log('🔄 数据已从旧格式迁移到暗号隔离存储');
     }
-    // 标记已迁移（即使没有数据也标记，避免每次都检查）
-    localStorage.setItem(migratedFlag, '1');
+    // 全局标记：只迁移一次
+    localStorage.setItem(GLOBAL_MIGRATED, '1');
   },
 
   _loadFromLocalStorage() {

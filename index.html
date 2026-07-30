@@ -322,7 +322,25 @@
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
     <div class="skeleton-text">正在进入小宇宙...</div>
+    <button id="skeleton-safe-btn" type="button" style="margin-top:24px;padding:8px 16px;font-size:12px;color:#BFA8A8;background:transparent;border:1px solid #E8D5D5;border-radius:20px;display:none;">点我重新进入</button>
   </div>
+  <script>
+    // 兜底：如果 4 秒后还在骨架屏，显示重新进入按钮
+    (function(){
+      var t = setTimeout(function(){
+        var btn = document.getElementById('skeleton-safe-btn');
+        var sk = document.getElementById('app-skeleton');
+        if (sk && !sk.classList.contains('hide') && btn) {
+          btn.style.display = 'inline-block';
+          btn.onclick = function(){
+            try { sessionStorage.removeItem('love_token'); sessionStorage.removeItem('love_name'); } catch(e){}
+            location.reload();
+          };
+        }
+      }, 4000);
+      window.addEventListener('load', function(){ clearTimeout(t); });
+    })();
+  </script>
 
   <div class="app-container" id="app" style="display:none">
     <!-- 由 App.render() 动态渲染 -->
@@ -331,7 +349,7 @@
   <script>
     // 注册 Service Worker，检测到新版本自动刷新
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           newWorker.addEventListener('statechange', () => {
@@ -353,9 +371,9 @@
   <script defer src="js/tips.js"></script>
   <script defer src="js/utils.js"></script>
   <script defer src="js/sfx.js"></script>
+  <script defer src="js/components.js"></script>
   <script defer src="js/auth.js"></script>
   <script defer src="js/store.js"></script>
-  <script defer src="js/components.js"></script>
 
   <!-- 页面模块 -->
   <script defer src="js/pages/dashboard.js"></script>
