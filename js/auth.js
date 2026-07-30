@@ -60,6 +60,8 @@ const Auth = {
     if (match) {
       sessionStorage.setItem('love_token', hash);
       sessionStorage.setItem('love_name', match[0]);
+      // 记住最近登录的暗号（用于登录页显示合照等）
+      localStorage.setItem('love_last_hash', hash.substring(0, 8));
       return { ok: true, name: match[0], hash };
     }
     return { ok: false, error: '暗号不对哦，再试一次吧 💕' };
@@ -171,7 +173,10 @@ const Auth = {
 
   // ===== 页面渲染 =====
   renderLoginPage(container) {
-    const savedPhoto = localStorage.getItem('love_couple_photo') || 'assets/couple.jpg';
+    // 登录页合照：优先用带暗号前缀的（如果有最近登录过的暗号），否则用旧 key 兜底
+    const lastHash = localStorage.getItem('love_last_hash');
+    const prefixedKey = lastHash ? 'love_' + lastHash + '_couple_photo' : null;
+    const savedPhoto = (prefixedKey && localStorage.getItem(prefixedKey)) || localStorage.getItem('love_couple_photo') || 'assets/couple.jpg';
     container.innerHTML = `
       <div class="login-page">
         <div class="login-card">
@@ -242,8 +247,18 @@ const Auth = {
       const result = await this.change(oldPassword, newPassword, name);
       if (result.ok) {
         overlay.remove();
-        const keys = ['love_profile','love_anniversaries','love_travels','love_foods','love_shopping','love_ledger','love_inspiration'];
-        keys.forEach(k => localStorage.removeItem(k));
+        // 清除旧暗号的所有 localStorage 数据（含新旧两种 key 格式）
+        const oldHash = sessionStorage.getItem('love_token');
+        if (oldHash) {
+          const oldPrefix = 'love_' + oldHash.substring(0, 8) + '_';
+          ['profile','anniversaries','travels','foods','shopping','ledger','inspiration',
+           'data_version','builtin_together_date','builtin_version','couple_photo','migrated_from_legacy']
+            .forEach(s => localStorage.removeItem(oldPrefix + s));
+        }
+        // 兼容：也清除旧格式 key
+        ['love_profile','love_anniversaries','love_travels','love_foods','love_shopping','love_ledger','love_inspiration',
+         'love_data_version','love_builtin_together_date','love_builtin_version','love_couple_photo']
+          .forEach(k => localStorage.removeItem(k));
         Utils.showToast(result.message);
       } else {
         Utils.showToast(result.error);

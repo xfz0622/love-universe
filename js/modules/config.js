@@ -10,7 +10,12 @@ window.APP_CONFIG = {
     get token() {
       return atob(this._tk1 + this._tk2);
     },
-    dataFile: 'data.json',
+    // dataFile 根据当前暗号动态生成，实现不同暗号独立数据文件
+    get dataFile() {
+      const hash = sessionStorage.getItem('love_token');
+      if (!hash) return 'data.json';
+      return 'data_' + hash.substring(0, 8) + '.json';
+    },
     branch: 'main',
     apiBase: 'https://api.github.com'
   },

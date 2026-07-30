@@ -1,14 +1,26 @@
 /* ===== 【我们的恋爱小宇宙】数据层 - GitHub 同步版 ===== */
 
-const STORE_KEYS = {
-  profile: 'love_profile',
-  anniversaries: 'love_anniversaries',
-  travels: 'love_travels',
-  foods: 'love_foods',
-  shopping: 'love_shopping',
-  ledger: 'love_ledger',
-  inspiration: 'love_inspiration'
-};
+// 获取当前暗号前缀（用于数据隔离）
+function _getPasscodePrefix() {
+  const hash = sessionStorage.getItem('love_token');
+  if (!hash) return 'love_';
+  // 取 hash 前8位作为短标识，兼顾可读性和唯一性
+  return 'love_' + hash.substring(0, 8) + '_';
+}
+
+// 动态生成带暗号前缀的 STORE_KEYS
+function _getStoreKeys() {
+  const prefix = _getPasscodePrefix();
+  return {
+    profile: prefix + 'profile',
+    anniversaries: prefix + 'anniversaries',
+    travels: prefix + 'travels',
+    foods: prefix + 'foods',
+    shopping: prefix + 'shopping',
+    ledger: prefix + 'ledger',
+    inspiration: prefix + 'inspiration'
+  };
+}
 
 const DEFAULT_PROFILE = {
   id: 'profile_001',
@@ -73,6 +85,9 @@ const Store = {
   // 初始化
   async init() {
     if (this._initialized) return;
+
+    // 🔄 数据迁移：旧版 key（无暗号前缀）→ 新版 key（带暗号前缀）
+    this._migrateFromLegacyKeys();
 
     // 🚀 先用本地数据立即渲染，GitHub 同步放到后台
     this.data = this._loadFromLocalStorage();
@@ -187,25 +202,26 @@ const Store = {
     if (isNaN(togetherDate.getTime())) return;
 
     // 检测 togetherDate 是否变化
-    const lastTogether = localStorage.getItem('love_builtin_together_date');
+    const prefix = _getPasscodePrefix();
+    const lastTogether = localStorage.getItem(prefix + 'builtin_together_date');
     if (lastTogether && lastTogether !== together) {
       this.data.anniversaries = (this.data.anniversaries || []).filter(
         a => !a.id || !a.id.startsWith('auto_')
       );
       console.log('🔄 在一起日期已变更，重新生成内置纪念日');
     }
-    localStorage.setItem('love_builtin_together_date', together);
+    localStorage.setItem(prefix + 'builtin_together_date', together);
 
     // 检查版本号，版本升级时重新生成
     const BUILTIN_VERSION = 3;
-    const lastVersion = parseInt(localStorage.getItem('love_builtin_version') || '0', 10);
+    const lastVersion = parseInt(localStorage.getItem(prefix + 'builtin_version') || '0', 10);
     if (lastVersion < BUILTIN_VERSION) {
       this.data.anniversaries = (this.data.anniversaries || []).filter(
         a => !a.id || !a.id.startsWith('auto_')
       );
       console.log('🔄 内置纪念日版本升级，重新生成');
     }
-    localStorage.setItem('love_builtin_version', BUILTIN_VERSION);
+    localStorage.setItem(prefix + 'builtin_version', BUILTIN_VERSION);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -400,18 +416,71 @@ const Store = {
     }
   },
 
+  /**
+   * 从旧版 key（无暗号前缀 love_profile/love_anniversaries/...）迁移到新版 key
+   * 迁移后保留旧 key（不删除），因为同一设备可能有多个暗号的数据
+   * 每个暗号首次登录时自动迁移一次
+   */
+  _migrateFromLegacyKeys() {
+    const prefix = _getPasscodePrefix();
+    const migratedFlag = prefix + 'migrated_from_legacy';
+    if (localStorage.getItem(migratedFlag)) return; // 已迁移过
+
+    const legacyKeys = [
+      'love_profile', 'love_anniversaries', 'love_travels', 'love_foods',
+      'love_shopping', 'love_ledger', 'love_inspiration'
+    ];
+
+    let migrated = false;
+    for (const legacyKey of legacyKeys) {
+      const data = localStorage.getItem(legacyKey);
+      if (data !== null) {
+        // 映射到新 key: love_profile → love_<hash8>_profile
+        const suffix = legacyKey.replace('love_', '');
+        const newKey = prefix + suffix;
+        // 只有新 key 不存在时才迁移（避免覆盖已存在的数据）
+        if (!localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, data);
+          migrated = true;
+        }
+      }
+    }
+
+    // 迁移其他辅助 key
+    const auxLegacy = [
+      ['love_data_version', prefix + 'data_version'],
+      ['love_builtin_together_date', prefix + 'builtin_together_date'],
+      ['love_builtin_version', prefix + 'builtin_version'],
+      ['love_couple_photo', prefix + 'couple_photo']
+    ];
+    for (const [oldKey, newKey] of auxLegacy) {
+      const data = localStorage.getItem(oldKey);
+      if (data !== null && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, data);
+        migrated = true;
+      }
+    }
+
+    if (migrated) {
+      console.log('🔄 数据已从旧格式迁移到暗号隔离存储');
+    }
+    // 标记已迁移（即使没有数据也标记，避免每次都检查）
+    localStorage.setItem(migratedFlag, '1');
+  },
+
   _loadFromLocalStorage() {
+    const keys = _getStoreKeys();
     const data = {
-      profile: Utils.loadFromStorage(STORE_KEYS.profile, { ...DEFAULT_PROFILE }),
-      anniversaries: Utils.loadFromStorage(STORE_KEYS.anniversaries, []),
-      travels: Utils.loadFromStorage(STORE_KEYS.travels, []),
-      foods: Utils.loadFromStorage(STORE_KEYS.foods, []),
-      shopping: Utils.loadFromStorage(STORE_KEYS.shopping, []),
-      ledger: Utils.loadFromStorage(STORE_KEYS.ledger, []),
-      inspiration: Utils.loadFromStorage(STORE_KEYS.inspiration, [...DEFAULT_INSPIRATION])
+      profile: Utils.loadFromStorage(keys.profile, { ...DEFAULT_PROFILE }),
+      anniversaries: Utils.loadFromStorage(keys.anniversaries, []),
+      travels: Utils.loadFromStorage(keys.travels, []),
+      foods: Utils.loadFromStorage(keys.foods, []),
+      shopping: Utils.loadFromStorage(keys.shopping, []),
+      ledger: Utils.loadFromStorage(keys.ledger, []),
+      inspiration: Utils.loadFromStorage(keys.inspiration, [...DEFAULT_INSPIRATION])
     };
     // 恢复版本号
-    const savedVersion = localStorage.getItem('love_data_version');
+    const savedVersion = localStorage.getItem(_getPasscodePrefix() + 'data_version');
     if (savedVersion) data._version = parseInt(savedVersion, 10);
     return data;
   },
@@ -470,12 +539,13 @@ const Store = {
   },
 
   saveAll() {
-    Object.entries(STORE_KEYS).forEach(([key, storageKey]) => {
+    const keys = _getStoreKeys();
+    Object.entries(keys).forEach(([key, storageKey]) => {
       Utils.saveToStorage(storageKey, this.data[key]);
     });
     // 持久化版本号，防止后台同步时被旧远程数据覆盖
     if (this.data._version) {
-      localStorage.setItem('love_data_version', this.data._version);
+      localStorage.setItem(_getPasscodePrefix() + 'data_version', this.data._version);
     }
   },
 
@@ -526,7 +596,8 @@ const Store = {
   },
 
   saveCollection(collection) {
-    Utils.saveToStorage(STORE_KEYS[collection], this.data[collection]);
+    const keys = _getStoreKeys();
+    Utils.saveToStorage(keys[collection], this.data[collection]);
   },
 
   getUpcomingAnniversaries(limit = 3) {
@@ -581,13 +652,13 @@ const Store = {
     if (this.data.profile && this.data.profile.couplePhoto) {
       return this.data.profile.couplePhoto;
     }
-    const stored = localStorage.getItem('love_couple_photo');
+    const stored = localStorage.getItem(_getPasscodePrefix() + 'couple_photo');
     if (stored) return stored;
     return 'assets/couple.jpg';
   },
 
   setCouplePhoto(base64) {
-    localStorage.setItem('love_couple_photo', base64);
+    localStorage.setItem(_getPasscodePrefix() + 'couple_photo', base64);
     if (this.data.profile) {
       this.data.profile.couplePhoto = base64;
       this.saveCollection('profile');
