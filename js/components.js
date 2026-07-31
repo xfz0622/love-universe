@@ -494,15 +494,32 @@ const Components = {
       imgNaturalW = img.naturalWidth;
       imgNaturalH = img.naturalHeight;
       if (!imgNaturalW || !imgNaturalH) return;
-      // 初始缩放让图片至少覆盖视口
+      // 默认显示完整图片（fit 模式，不裁切）
       const vpW = viewport.clientWidth;
       const vpH = viewport.clientHeight;
-      scale = Math.max(vpW / imgNaturalW, vpH / imgNaturalH);
+      scale = Math.min(vpW / imgNaturalW, vpH / imgNaturalH);
       if (scale < 0.5) scale = 0.5;
       if (scale > 3) scale = 3;
       slider.value = scale;
       offsetX = 0;
       offsetY = 0;
+
+      // 更新遮罩層大小，匹配圖片長寬比
+      const mask = overlay.querySelector('.cropper-mask');
+      if (mask) {
+        const imgRatio = imgNaturalW / imgNaturalH;
+        const maxMaskSize = Math.min(vpW, vpH) * 0.85;
+        if (imgRatio >= 1) {
+          // 橫向圖片：遮罩寬 = maxMaskSize，高 = 寬 / ratio
+          mask.style.width = `${maxMaskSize}px`;
+          mask.style.height = `${maxMaskSize / imgRatio}px`;
+        } else {
+          // 豎向圖片：遮罩高 = maxMaskSize，寬 = 高 * ratio
+          mask.style.height = `${maxMaskSize}px`;
+          mask.style.width = `${maxMaskSize * imgRatio}px`;
+        }
+      }
+
       updateTransform();
     };
 
@@ -610,7 +627,11 @@ const Components = {
       cleanup();
       const vpW = viewport.clientWidth;
       const vpH = viewport.clientHeight;
-      const cropSize = Math.min(vpW, vpH) * 0.85;
+      const mask = overlay.querySelector('.cropper-mask');
+      // 使用遮罩實際大小而非固定正方形
+      const maskW = mask ? parseFloat(mask.style.width) || mask.offsetWidth : Math.min(vpW, vpH) * 0.85;
+      const maskH = mask ? parseFloat(mask.style.height) || mask.offsetHeight : Math.min(vpW, vpH) * 0.85;
+      const cropSize = Math.min(maskW, maskH);
       const cropW = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
       const cropH = cropSize / aspectRatio;
 
