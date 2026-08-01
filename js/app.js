@@ -14,7 +14,7 @@ const App = {
       return;
     }
 
-    // 先注册页面，立刻渲染，不等数据
+    // 注册页面
     this.pages = {
       dashboard: DashboardPage,
       timeline: TimelinePage,
@@ -30,21 +30,20 @@ const App = {
       this.currentPage = hash;
     }
 
-    this.render();
-
-    // 后台静默初始化数据（不阻塞进入）
+    // 初始化本地数据（立即完成），然后渲染
     try {
       await Store.init();
     } catch (e) {
-      console.warn('后台数据同步失败:', e.message);
+      console.warn('Store初始化失败，使用默认数据:', e.message);
     }
+
+    this.render();
 
     // 监听hash变化
     window.addEventListener('hashchange', async () => {
       const newHash = window.location.hash.replace('#', '');
       if (newHash && this.pages[newHash]) {
         this.currentPage = newHash;
-        // GitHub 同步在 Store 内部轮询
         this.render();
       }
     });
