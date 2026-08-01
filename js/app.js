@@ -14,19 +14,7 @@ const App = {
       return;
     }
 
-    // 初始化数据层（从服务器同步），带兜底：失败也允许进入
-    try {
-      await Store.init();
-    } catch (e) {
-      console.error('Store 初始化失败，回退到登录页:', e);
-      sessionStorage.removeItem('love_token');
-      sessionStorage.removeItem('love_name');
-      Auth.renderLoginPage(app);
-      this._hideSkeleton();
-      return;
-    }
-
-    // 注册所有页面
+    // 先注册页面，立刻渲染，不等数据
     this.pages = {
       dashboard: DashboardPage,
       timeline: TimelinePage,
@@ -37,14 +25,19 @@ const App = {
       inspiration: InspirationPage
     };
 
-    // 读取URL hash
     const hash = window.location.hash.replace('#', '');
     if (hash && this.pages[hash]) {
       this.currentPage = hash;
     }
 
-    // 渲染
     this.render();
+
+    // 后台静默初始化数据（不阻塞进入）
+    try {
+      await Store.init();
+    } catch (e) {
+      console.warn('后台数据同步失败:', e.message);
+    }
 
     // 监听hash变化
     window.addEventListener('hashchange', async () => {
