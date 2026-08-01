@@ -23,12 +23,12 @@
 
 .game-card-inner { display: flex; align-items: center; gap: 14px; }
 .game-card-icon {
-  width: 60px; height: 60px; border-radius: 0; flex-shrink: 0;
+  width: 72px; height: 72px; border-radius: 0; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 0;
   color: #fff; font-weight: 700;
   background-color: transparent;
   border: none;
-  background-size: 52px 52px; background-position: center; background-repeat: no-repeat;
+  background-size: 60px 60px; background-position: center; background-repeat: no-repeat;
 }
 .game-card:nth-child(1) .game-card-icon { background-image: url('../assets/icons/game_dice.png'); }
 .game-card:nth-child(2) .game-card-icon { background-image: url('../assets/icons/game_math24.png'); }
