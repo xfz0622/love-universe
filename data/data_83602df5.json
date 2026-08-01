@@ -1,0 +1,618 @@
+{
+  "profile": {
+    "id": "profile_001",
+    "togetherDate": "2026-07-17",
+    "nicknameA": "小宇宙",
+    "nicknameB": "小星星",
+    "couplePhoto": "",
+    "declaration": "在浩瀚宇宙中相遇，从此星光有了归处。"
+  },
+  "anniversaries": [
+    {
+      "id": "auto_qixi_2026",
+      "name": "🎋 七夕",
+      "date": "2026-08-19",
+      "repeatCycle": "yearly",
+      "remindDays": 10,
+      "status": "active"
+    },
+    {
+      "id": "auto_days_100",
+      "name": "💯 100天纪念日",
+      "date": "2026-10-25",
+      "repeatCycle": "single",
+      "remindDays": 7,
+      "status": "active"
+    },
+    {
+      "id": "auto_christmas_2026",
+      "name": "🎄 圣诞节",
+      "date": "2026-12-25",
+      "repeatCycle": "yearly",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_newyear_2026",
+      "name": "🎆 跨年夜",
+      "date": "2026-12-31",
+      "repeatCycle": "yearly",
+      "remindDays": 7,
+      "status": "active"
+    },
+    {
+      "id": "auto_valentine_2027",
+      "name": "2027年情人节",
+      "date": "2027-02-14",
+      "repeatCycle": "yearly",
+      "remindDays": 7,
+      "status": "active"
+    },
+    {
+      "id": "auto_520_2027",
+      "name": "💌 520",
+      "date": "2027-05-20",
+      "repeatCycle": "yearly",
+      "remindDays": 7,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_1",
+      "name": "一周年纪念日 ❤️",
+      "date": "2027-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_2",
+      "name": "2周年纪念日",
+      "date": "2028-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_3",
+      "name": "3周年纪念日",
+      "date": "2029-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_4",
+      "name": "4周年纪念日",
+      "date": "2030-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_5",
+      "name": "5周年纪念日",
+      "date": "2031-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_6",
+      "name": "6周年纪念日",
+      "date": "2032-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_7",
+      "name": "7周年纪念日",
+      "date": "2033-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_8",
+      "name": "8周年纪念日",
+      "date": "2034-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_9",
+      "name": "9周年纪念日",
+      "date": "2035-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    },
+    {
+      "id": "auto_year_10",
+      "name": "10周年纪念日",
+      "date": "2036-07-17",
+      "repeatCycle": "single",
+      "remindDays": 14,
+      "status": "active"
+    }
+  ],
+  "travels": [],
+  "foods": [],
+  "shopping": [
+    {
+      "name": "包包",
+      "purpose": "七夕礼物",
+      "budget": 2000,
+      "link": "",
+      "deadline": "",
+      "status": "pending",
+      "id": "id_ms7bje1m_pirlqfp7u",
+      "createdAt": "2026-07-30"
+    }
+  ],
+  "ledger": [],
+  "inspiration": [
+    {
+      "id": "insp_001",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣必做100件小事&type=51",
+      "screenshot": "",
+      "summary": "📋 情侣必做的100件小事清单：一起看日出、一起做饭、一起养一只猫…把普通日子过成专属浪漫。",
+      "tags": [
+        "清单",
+        "日常",
+        "情侣活动"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_002",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣拍照姿势氛围感&type=51",
+      "screenshot": "",
+      "summary": "📸 情侣拍照姿势大全：9个万能模板从自拍到剪影，手把手教你拍出氛围感神仙合照。",
+      "tags": [
+        "拍照",
+        "日常",
+        "氛围感"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_003",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情侣日常高甜瞬间",
+      "screenshot": "",
+      "summary": "💕 情侣高甜日常合集：从早安吻到晚安抱，那些让人心动的生活碎片，看完想立刻去拥抱TA。",
+      "tags": [
+        "日常",
+        "甜蜜"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_004",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣恋爱保鲜秘诀长期关系&type=51",
+      "screenshot": "",
+      "summary": "💡 长期恋爱保鲜秘诀：热恋期过后的相处之道，如何让爱情持续升温的N个实用技巧。",
+      "tags": [
+        "技巧",
+        "长期关系",
+        "升温"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_005",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情侣升温小游戏",
+      "screenshot": "",
+      "summary": "🎮 情侣升温小游戏合集：真心话大冒险升级版、默契考验、双人挑战…让感情越来越好的互动游戏。",
+      "tags": [
+        "游戏",
+        "升温",
+        "日常"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_006",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣vlog拍摄教程日常记录&type=51",
+      "screenshot": "",
+      "summary": "🎬 情侣Vlog拍摄教程：零基础也能拍出电影感日常，记录属于两个人的小宇宙。",
+      "tags": [
+        "Vlog",
+        "记录",
+        "日常"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_007",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情侣穿搭同色系高级感",
+      "screenshot": "",
+      "summary": "👫 情侣穿搭灵感：同色系叠穿低调秀恩爱，莫兰迪配色高级不土味，出门就是行走的画报。",
+      "tags": [
+        "穿搭",
+        "日常",
+        "高级感"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_008",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣居家约会创意低成本浪漫&type=51",
+      "screenshot": "",
+      "summary": "🏠 低成本居家约会创意：天台电影夜、手作陶艺、双人厨房挑战…不花钱也能浪漫满分的约会idea合集。",
+      "tags": [
+        "约会",
+        "周末",
+        "低成本",
+        "居家"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_009",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情侣周末去哪玩约会推荐",
+      "screenshot": "",
+      "summary": "🗺️ 周末约会去哪玩：小众博物馆、城市周边一日游、新开网红店探店…让每个周末都像迷你旅行。",
+      "tags": [
+        "周末",
+        "约会",
+        "探店"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_010",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣周末brunch推荐氛围感&type=51",
+      "screenshot": "",
+      "summary": "🥂 周末Brunch约会指南：上海/北京/杭州氛围感餐厅推荐，从法式可丽饼到日式松饼，甜蜜从早开始。",
+      "tags": [
+        "周末",
+        "美食",
+        "约会"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_011",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情侣双人运动健身一起",
+      "screenshot": "",
+      "summary": "🏃 情侣双人运动：一起跑步、一起瑜伽、一起攀岩…运动分泌的多巴胺让恋爱更甜蜜。",
+      "tags": [
+        "周末",
+        "运动",
+        "户外"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_012",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣必看高分爱情电影推荐&type=51",
+      "screenshot": "",
+      "summary": "🎥 情侣必看高分爱情电影清单：窝在沙发盖同一条毯子，和TA一起看完这20部让人相信爱情的电影。",
+      "tags": [
+        "电影",
+        "居家",
+        "周末"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_013",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/纪念日惊喜策划攻略",
+      "screenshot": "",
+      "summary": "🎉 纪念日惊喜策划全攻略：从倒计时准备到当天执行，让TA感动到哭的完整时间线与创意方案。",
+      "tags": [
+        "纪念日",
+        "惊喜",
+        "策划"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_014",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=纪念日餐厅推荐仪式感&type=51",
+      "screenshot": "",
+      "summary": "🕯️ 纪念日仪式感餐厅：从外滩江景到胡同私房菜，精选适合纪念日的氛围感餐厅，烛光晚餐攻略。",
+      "tags": [
+        "纪念日",
+        "餐厅",
+        "仪式感"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_015",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/hashtag/1612992705397895",
+      "screenshot": "",
+      "summary": "🎀 纪念日礼物推荐：女生能记住一整年的礼物清单，实用又走心，每一件都藏着\"我懂你\"的小心思。",
+      "tags": [
+        "礼物",
+        "纪念日",
+        "惊喜"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_016",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣手作DIY礼物教程&type=51",
+      "screenshot": "",
+      "summary": "✂️ 情侣手作DIY礼物教程：100个优点夸夸罐、手工相册、编织手绳…亲手做的礼物最戳人心。",
+      "tags": [
+        "DIY",
+        "礼物",
+        "纪念日"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_017",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=纪念日蛋糕定制创意&type=51",
+      "screenshot": "",
+      "summary": "🎂 纪念日蛋糕灵感：从复古手绘到简约韩式，为TA定制一个独一无二的纪念日蛋糕。",
+      "tags": [
+        "纪念日",
+        "蛋糕",
+        "创意"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_018",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情人节礼物清单女生心动&type=51",
+      "screenshot": "",
+      "summary": "💝 情人节礼物终极清单：从百元心意到千元惊喜，按性格选礼物不踩雷，让TA感受到满满用心。",
+      "tags": [
+        "情人节",
+        "礼物",
+        "清单"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_019",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/情人节浪漫约会方案",
+      "screenshot": "",
+      "summary": "🌹 情人节约会全攻略：上午惊喜早餐→下午手作体验→晚上烛光晚餐→深夜天台看星星，完美的一天。",
+      "tags": [
+        "情人节",
+        "约会",
+        "浪漫"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_020",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情人节情书文案走心&type=51",
+      "screenshot": "",
+      "summary": "💌 走心情书文案：不是复制粘贴的土味情话，而是只属于你们两个人的真心话，写进TA心里。",
+      "tags": [
+        "情人节",
+        "情书",
+        "告白"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_021",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=520礼物推荐小众高级&type=51",
+      "screenshot": "",
+      "summary": "💎 520小众高级礼物：拒绝烂大街，从独立设计师首饰到定制香薰，送出一份独特心意。",
+      "tags": [
+        "520",
+        "礼物",
+        "小众"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_022",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/520告白创意方案",
+      "screenshot": "",
+      "summary": "💬 520告白创意方案：不一定要多隆重，但一定要够特别，10个让人无法拒绝的告白方式。",
+      "tags": [
+        "520",
+        "告白",
+        "创意"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_023",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=七夕礼物推荐情侣走心&type=51",
+      "screenshot": "",
+      "summary": "🎋 七夕礼物走心推荐：从国风首饰到星空投影灯，中国情人节就该送有东方浪漫的礼物。",
+      "tags": [
+        "七夕",
+        "礼物",
+        "走心"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_024",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/七夕约会穿搭氛围感",
+      "screenshot": "",
+      "summary": "👘 七夕约会穿搭：改良旗袍、新中式情侣装，穿出东方浪漫的高级感，拍照超出片。",
+      "tags": [
+        "七夕",
+        "穿搭",
+        "约会"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_025",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=七夕浪漫约会餐厅推荐&type=51",
+      "screenshot": "",
+      "summary": "🏮 七夕约会餐厅推荐：从露台星空到园林私宴，最具中国式浪漫的约会餐厅精选。",
+      "tags": [
+        "七夕",
+        "餐厅",
+        "约会"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_026",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=七夕DIY手作礼物心意&type=51",
+      "screenshot": "",
+      "summary": "🧵 七夕手作礼物灵感：手编红绳、手绘团扇、刺绣香囊…亲手做的东方浪漫，胜过千言万语。",
+      "tags": [
+        "七夕",
+        "DIY",
+        "礼物"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_027",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=圣诞节约会穿搭氛围感&type=51",
+      "screenshot": "",
+      "summary": "🎄 圣诞节约会指南：红绿配色穿搭、圣诞集市打卡、交换礼物攻略，打造最有仪式感的圣诞夜。",
+      "tags": [
+        "圣诞",
+        "约会",
+        "穿搭",
+        "冬季"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_028",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/跨年夜情侣怎么过",
+      "screenshot": "",
+      "summary": "🎆 跨年夜浪漫计划：从烟花倒计时到新年第一顿早餐，和TA一起迎接新年的N种方式。",
+      "tags": [
+        "跨年",
+        "仪式感",
+        "冬季"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_029",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=冬季情侣温泉旅行推荐&type=51",
+      "screenshot": "",
+      "summary": "♨️ 冬季情侣温泉旅行：从箱根到腾冲，精选最适合冬天的温泉目的地，泡汤看雪才是冬天的正确打开方式。",
+      "tags": [
+        "冬季",
+        "温泉",
+        "旅行"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_030",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣冬季居家温暖约会&type=51",
+      "screenshot": "",
+      "summary": "🕯️ 冬季居家温暖约会：煮红酒、烤红薯、裹同一条毯子看剧…冬天的浪漫全在房间里。",
+      "tags": [
+        "冬季",
+        "居家",
+        "温暖"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_031",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣旅行小众目的地推荐&type=51",
+      "screenshot": "",
+      "summary": "✈️ 国内情侣小众旅行地推荐：温岭石塘小箬村、广西钦州粉海豚、平潭岛蓝眼泪…避开人潮享受二人世界。",
+      "tags": [
+        "旅行",
+        "目的地",
+        "户外"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_032",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/春天情侣踏青野餐攻略",
+      "screenshot": "",
+      "summary": "🧺 春日踏青野餐攻略：野餐篮必备清单+出片穿搭+选址技巧，春天就是要在草地上晒太阳谈恋爱。",
+      "tags": [
+        "春游",
+        "野餐",
+        "户外",
+        "拍照"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_033",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=夏天情侣海边旅行拍照&type=51",
+      "screenshot": "",
+      "summary": "🌊 夏日海边情侣游：比基尼穿搭、沙滩拍照姿势、防晒好物…和TA一起去海边撒狗粮。",
+      "tags": [
+        "海边",
+        "夏天",
+        "旅行",
+        "拍照"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_034",
+      "platform": "抖音",
+      "url": "https://www.douyin.com/search/秋天情侣拍照银杏枫叶",
+      "screenshot": "",
+      "summary": "🍂 秋日情侣拍照圣地：银杏大道、红枫林、芦苇荡…秋天的每一帧都是电影海报级别的浪漫。",
+      "tags": [
+        "秋天",
+        "拍照",
+        "户外"
+      ],
+      "createdAt": ""
+    },
+    {
+      "id": "insp_035",
+      "platform": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=情侣旅行攻略打包清单&type=51",
+      "screenshot": "",
+      "summary": "🧳 情侣旅行打包清单：从证件到应急药品，超全不遗漏的旅行准备指南，出发前必看。",
+      "tags": [
+        "旅行",
+        "清单",
+        "攻略"
+      ],
+      "createdAt": ""
+    }
+  ],
+  "_version": 10,
+  "_updatedAt": "2026-08-01T06:59:01.520Z",
+  "_updatedBy": "unknown"
+}
