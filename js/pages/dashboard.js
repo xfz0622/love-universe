@@ -148,40 +148,27 @@ const DashboardPage = {
         <div class="dashboard-card dashboard-card-full" style="background:transparent;box-shadow:none;border:none;padding:0">
           <div class="quick-entries">
             <button class="quick-entry" onclick="App.navigateTo('timeline')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-timeline)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="6" y="7" width="24" height="24" rx="3"/><line x1="24" y1="5" x2="24" y2="9"/><line x1="12" y1="5" x2="12" y2="9"/><line x1="6" y1="14" x2="30" y2="14"/><path d="M12 20h2m8 0h2M12 26h2m8 0h2"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_anniversary.png" alt="纪念日">
               <span class="quick-entry-label">纪念日</span>
             </button>
             <button class="quick-entry" onclick="App.navigateTo('travel')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-travel)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="14" r="5"/><path d="M18 31c9-8 12-12 12-17a11 11 0 1 0-22 0c0 5 3 9 10 17z"/><circle cx="18" cy="14" r="2" fill="currentColor"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_travel.png" alt="旅行">
               <span class="quick-entry-label">旅行</span>
             </button>
             <button class="quick-entry" onclick="App.navigateTo('game')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-food)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="7" width="26" height="22" rx="3"/><path d="M12 15h4m-2-2v4"/><circle cx="20" cy="14" r="1.5" fill="currentColor"/><circle cx="24" cy="17" r="1.5" fill="currentColor"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_games.png" alt="游戏">
               <span class="quick-entry-label">游戏</span>
             </button>
             <button class="quick-entry" onclick="App.navigateTo('ledger')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-ledger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="7" width="26" height="22" rx="3"/><path d="M5 13h26"/><path d="M25 19h4"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_ledger.png" alt="账本">
               <span class="quick-entry-label">账本</span>
             </button>
             <button class="quick-entry" onclick="App.navigateTo('shopping')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-shopping)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M7 8h3l3 16h13l3-12H10"/><circle cx="15" cy="29" r="2"/><circle cx="27" cy="29" r="2"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_shopping.png" alt="购物">
               <span class="quick-entry-label">购物</span>
             </button>
             <button class="quick-entry" onclick="App.navigateTo('inspiration')">
-              <svg class="quick-entry-icon" viewBox="0 0 36 36" fill="none" stroke="var(--color-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6a8 8 0 0 0-8 8c0 3 2 5 3 7s1 3 1 3h8s0-1 1-3 3-4 3-7a8 8 0 0 0-8-8z"/>
-                <path d="M15 27h6M16 30h4"/>
-              </svg>
+              <img class="quick-entry-icon" src="assets/icons/nav_inspiration.png" alt="灵感">
               <span class="quick-entry-label">灵感</span>
             </button>
           </div>

@@ -13,28 +13,27 @@
   background: var(--bg-card); border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 18px 16px; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
   border: none; overflow: hidden; position: relative;
+  min-height: 92px; height: 92px; display: flex; align-items: center;
 }
 .game-card::after {
   content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
-  border-radius: 3px 0 0 3px;
+  border-radius: 3px 0 0 3px; background: #1a1a1a;
 }
-.game-card:nth-child(1) { border-left: 5px solid #6C5CE7; }
-.game-card:nth-child(2) { border-left: 5px solid #00B894; }
-.game-card:nth-child(3) { border-left: 5px solid #FF6B8A; }
-.game-card:nth-child(4) { border-left: 5px solid #FF9F43; }
 .game-card:active { transform: scale(0.97); box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
 
 .game-card-inner { display: flex; align-items: center; gap: 14px; }
 .game-card-icon {
-  width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+  width: 60px; height: 60px; border-radius: 0; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 0;
   color: #fff; font-weight: 700;
-  background-size: 34px 34px; background-position: center; background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  background-size: 52px 52px; background-position: center; background-repeat: no-repeat;
 }
-.game-card:nth-child(1) .game-card-icon { background-color: #6C5CE7; background-image: url('../assets/icons/game_dice.png'); }
-.game-card:nth-child(2) .game-card-icon { background-color: #00B894; background-image: url('../assets/icons/game_math24.png'); }
-.game-card:nth-child(3) .game-card-icon { background-color: #FF6B8A; background-image: url('../assets/icons/game_truthdare.png'); }
-.game-card:nth-child(4) .game-card-icon { background-color: #FF9F43; background-image: url('../assets/icons/game_speedmath.png'); }
+.game-card:nth-child(1) .game-card-icon { background-image: url('../assets/icons/game_dice.png'); }
+.game-card:nth-child(2) .game-card-icon { background-image: url('../assets/icons/game_math24.png'); }
+.game-card:nth-child(3) .game-card-icon { background-image: url('../assets/icons/game_truthdare.png'); }
+.game-card:nth-child(4) .game-card-icon { background-image: url('../assets/icons/game_speedmath.png'); }
 
 .game-card-icon::before { content: ''; }
 .game-card:nth-child(1) .game-card-icon::before { content: ''; }
@@ -487,10 +486,10 @@
   display: flex; align-items: center; justify-content: center; font-size: 0;
   background-size: 32px 32px; background-position: center; background-repeat: no-repeat;
 }
-.game-icon-dice { background-color: #1a1a1a; background-image: url('../assets/icons/game_dice.png'); }
-.game-icon-math { background-color: #E8F5E9; background-image: url('../assets/icons/game_math24.png'); }
-.game-icon-wheel { background-color: #FFF0F0; background-image: url('../assets/icons/game_truthdare.png'); }
-.game-icon-bolt { background-color: #FFF8E1; background-image: url('../assets/icons/game_speedmath.png'); }
+.game-icon-dice { background-color: #fff; background-image: url('../assets/icons/game_dice.png'); }
+.game-icon-math { background-color: #fff; background-image: url('../assets/icons/game_math24.png'); }
+.game-icon-wheel { background-color: #fff; background-image: url('../assets/icons/game_truthdare.png'); }
+.game-icon-bolt { background-color: #fff; background-image: url('../assets/icons/game_speedmath.png'); }
 /* 移除旧的::before文字 */
 .game-icon-dice::before, .game-icon-math::before,
 .game-icon-wheel::before, .game-icon-bolt::before { content: ''; }
