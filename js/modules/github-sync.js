@@ -1,8 +1,9 @@
 /* ===== 【我们的恋爱小宇宙】GitHub 数据同步 ===== */
 window.GitHubSync = {
   _config: null,
-  _sha: null, // 当前文件 SHA（用于更新）
+  _sha: null,
   _syncInProgress: false,
+  _timeout: 5000, // 5秒超时，不给用户添堵
 
   get config() {
     if (!this._config) this._config = APP_CONFIG.github;
@@ -17,18 +18,34 @@ window.GitHubSync = {
     };
   },
 
+  // 带超时的 fetch
+  async _fetch(url, opts = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this._timeout);
+    try {
+      const resp = await fetch(url, { ...opts, signal: controller.signal });
+      return resp;
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        throw new Error('请求超时');
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
   // 确保仓库和文件存在
   async initRepo() {
     const { owner, repo, dataFile, apiBase } = this.config;
 
-    // 检查仓库是否存在，不存在则创建
-    let resp = await fetch(`${apiBase}/repos/${owner}/${repo}`, {
+    let resp = await this._fetch(`${apiBase}/repos/${owner}/${repo}`, {
       headers: this._headers()
     });
 
     if (resp.status === 404) {
       console.log('📦 创建私有仓库...');
-      resp = await fetch(`${apiBase}/user/repos`, {
+      resp = await this._fetch(`${apiBase}/user/repos`, {
         method: 'POST',
         headers: this._headers(),
         body: JSON.stringify({
@@ -45,8 +62,7 @@ window.GitHubSync = {
       console.log('✅ 仓库已创建');
     }
 
-    // 获取 data.json 的 SHA
-    resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
+    resp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
       headers: this._headers()
     });
 
@@ -76,7 +92,7 @@ window.GitHubSync = {
     this._syncInProgress = true;
     try {
       const { owner, repo, dataFile, apiBase } = this.config;
-      const resp = await fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
+      const resp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
         headers: this._headers(),
         cache: 'no-store'
       });

@@ -115,7 +115,7 @@ const Store = {
     }
   },
 
-  // 后台静默同步：拉取 GitHub 数据并合并
+  // 后台静默同步：拉取 GitHub 数据并合并（失败不报错，完全不影响使用）
   async _backgroundSync() {
     try {
       const remoteData = await GitHubSync.initRepo();
