@@ -14,6 +14,7 @@ const TravelPage = {
     container.innerHTML = `
       ${this._renderHeader()}
       ${this._renderFilters()}
+      ${this._renderFoodEntry()}
       <div class="page-content" style="padding-top:0">
         <div id="travel-list">
           ${this._renderList(sorted)}
@@ -25,7 +26,29 @@ const TravelPage = {
     this._bindEvents();
     Components.animateCards(this.container, '.card');
   },
-
+_renderFoodEntry() {
+    const foodCount = (Store.getFoods && Store.getFoods().length) || 0;
+    return `
+      <div class="food-entry-card" onclick="App.navigateTo('food')" style="
+        display:flex;align-items:center;gap:14px;
+        background:var(--bg-card);border-radius:16px;
+        padding:16px;margin-bottom:16px;cursor:pointer;
+        box-shadow:0 2px 8px rgba(0,0,0,0.04);
+        transition:all 0.2s;border-left:4px solid #FF9F43;
+      ">
+        <div style="
+          width:48px;height:48px;border-radius:12px;
+          background:#FFF8E1;display:flex;align-items:center;justify-content:center;
+          font-size:24px;flex-shrink:0;
+        ">🍜</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px;color:var(--text-primary)">美食打卡</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${foodCount}家餐厅 · 一起吃遍全世界</div>
+        </div>
+        <div style="color:var(--text-muted);font-size:18px">→</div>
+      </div>
+    `;
+  },
   _renderHeader() {
     const doneCount = Store.getTravels().filter(t => t.tags && t.tags.includes('已打卡')).length;
     const wishCount = Store.getTravels().filter(t => t.tags && t.tags.includes('想去')).length;
