@@ -137,21 +137,12 @@
       "status": "active"
     },
     {
-      "name": "👸 公主生日",
-      "date": "2026-11-06",
-      "repeatCycle": "yearly",
-      "remindDays": 7,
-      "status": "active",
-      "id": "id_ms79osoo_sqqduslwg",
-      "createdAt": "2026-07-30"
-    },
-    {
       "name": "下一次见面",
       "date": "2026-08-15",
       "repeatCycle": "yearly",
       "remindDays": 7,
       "status": "active",
-      "id": "id_msdg6b4s_jvgaodys5",
+      "id": "id_msdg8jfy_h31n6p6pz",
       "createdAt": "2026-08-04"
     }
   ],
@@ -630,7 +621,7 @@
       "createdAt": ""
     }
   ],
-  "_version": 12,
-  "_updatedAt": "2026-08-03T16:32:25.031Z",
+  "_version": 13,
+  "_updatedAt": "2026-08-03T16:34:09.112Z",
   "_updatedBy": "unknown"
 }
