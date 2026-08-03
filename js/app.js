@@ -19,6 +19,7 @@ const App = {
       dashboard: DashboardPage,
       timeline: TimelinePage,
       travel: TravelPage,
+      food: FoodPage,
       game: GamePage,
       shopping: ShoppingPage,
       ledger: LedgerPage,
