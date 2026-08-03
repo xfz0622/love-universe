@@ -265,6 +265,7 @@ const Components = {
       { id: 'dashboard', icon: 'home', label: '首页', color: 'var(--color-primary)' },
       { id: 'timeline', icon: 'calendar', label: '纪念日', color: 'var(--color-timeline)' },
       { id: 'travel', icon: 'map', label: '旅行', color: 'var(--color-travel)' },
+      { id: 'food', icon: 'food', label: '美食', color: 'var(--color-food)' },
       { id: 'game', icon: 'game', label: '游戏', color: 'var(--color-food)' },
       { id: 'ledger', icon: 'wallet', label: '账本', color: 'var(--color-ledger)' },
       { id: 'shopping', icon: 'cart', label: '购物', color: 'var(--color-shopping)' },
