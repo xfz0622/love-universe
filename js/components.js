@@ -278,6 +278,7 @@ const Components = {
       home: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
       calendar: `<img src="${iconBase}/nav_anniversary.png" width="22" height="22" alt="纪念日" style="object-fit:contain">`,
       map: `<img src="${iconBase}/nav_travel.png" width="22" height="22" alt="旅行" style="object-fit:contain">`,
+      food: '<span style="font-size:20px">🍽️</span>',
       game: `<img src="${iconBase}/nav_games.png" width="22" height="22" alt="游戏" style="object-fit:contain">`,
       wallet: `<img src="${iconBase}/nav_ledger.png" width="22" height="22" alt="账本" style="object-fit:contain">`,
       cart: `<img src="${iconBase}/nav_shopping.png" width="22" height="22" alt="购物" style="object-fit:contain">`,
