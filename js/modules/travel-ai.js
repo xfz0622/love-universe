@@ -201,6 +201,12 @@ const TravelAI = {
     this._bindTabs(overlay);
     this._bindGuide(overlay);
     this._bindChat(overlay);
+
+    // 有历史记录时，默认直接进「AI 对话」，方便接着聊
+    if (this._history.length > 0) {
+      const chatTab = overlay.querySelector('.tai-tab[data-tab="chat"]');
+      if (chatTab) chatTab.click();
+    }
   },
 
   _welcomeMsg() {
