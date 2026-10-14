@@ -545,3 +545,26 @@ select.input {
   font-size: 14px; font-weight: 500; cursor: pointer;
 }
 .tai-recharge-ok:active { opacity: 0.7; }
+
+/* ===== AI 助手 v3：清空按钮 + 消息操作按钮 ===== */
+.tai-clear {
+  width: 32px; height: 32px; border: none; background: none;
+  font-size: 16px; cursor: pointer; opacity: 0.55;
+  display: flex; align-items: center; justify-content: center;
+}
+.tai-clear:active { opacity: 1; }
+.tai-msg-actions {
+  display: flex; gap: 8px; margin-top: 8px;
+  padding-top: 8px; border-top: 1px dashed var(--border-light, #eee);
+}
+.tai-mini-btn {
+  flex: 1; padding: 7px 10px; border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-card, #fff); border-radius: 8px;
+  font-size: 12px; color: var(--text-secondary); cursor: pointer;
+  transition: all 0.15s;
+}
+.tai-mini-btn:active {
+  background: var(--color-primary-ghost, #fdf0f2);
+  border-color: var(--primary, #ff6b81);
+  color: var(--primary, #ff6b81);
+}
