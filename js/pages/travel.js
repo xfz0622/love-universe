@@ -299,6 +299,13 @@ const TravelPage = {
     const end = new Date(today.getTime() + ((parseInt(days) || 1) - 1) * 86400000)
       .toISOString().slice(0, 10);
 
+    // 确保当前在旅行页
+    if (App && App.currentPage !== 'travel') {
+      App.currentPage = 'travel';
+      window.location.hash = 'travel';
+      App.render();
+    }
+
     this._showForm({
       location: destination || '',
       startDate: start,
@@ -309,6 +316,11 @@ const TravelPage = {
       notes: '',
       tags: ['想去']
     });
-    if (Utils.showToast) Utils.showToast('已填充，可自行修改后保存');
+    setTimeout(() => {
+      if (Utils.showToast) Utils.showToast('已填入下方表单，点「保存」即可加入行程');
+    }, 300);
   }
 };
+
+// 暴露到全局，方便 AI 助手模块调用
+window.TravelPage = TravelPage;
