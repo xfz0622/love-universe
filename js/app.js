@@ -1,4 +1,24 @@
 /* ===== 【我们的恋爱小宇宙】应用入口 & 路由管理 ===== */
+
+// ===== 免暗号自动登录 =====
+// 已去掉暗号（密码）步骤：打开网页即直接以「主人」身份进入，只保留主人的内容库。
+// 主人 hash 与 data/passwords.json 中一致，用于维持原有数据文件与本地存储的隔离。
+const APP_OWNER = {
+  name: '主人',
+  hash: '83602df50cd83038f848cae763e13a4b8ad97c3824565853cc5c0a23453efd95'
+};
+function ensureLoggedIn() {
+  if (sessionStorage.getItem('love_token')) return true;
+  try {
+    sessionStorage.setItem('love_token', APP_OWNER.hash);
+    sessionStorage.setItem('love_name', APP_OWNER.name);
+    return true;
+  } catch (e) {
+    console.warn('自动登录失败:', e.message);
+    return false;
+  }
+}
+
 const App = {
   currentPage: 'dashboard',
   pages: {},
@@ -7,8 +27,8 @@ const App = {
     const app = document.getElementById('app');
     if (!app) return;
 
-    // 检查登录态
-    if (!Auth.isLoggedIn()) {
+    // 免暗号：未登录时自动以主人身份登录，跳过登录页
+    if (!ensureLoggedIn()) {
       Auth.renderLoginPage(app);
       this._hideSkeleton();
       return;
@@ -99,8 +119,8 @@ const App = {
     // 隐藏骨架屏
     this._hideSkeleton();
 
-    // 未登录时不要渲染页面
-    if (!Auth.isLoggedIn()) {
+    // 免暗号：若仍无登录态则自动登录（正常情况下 init 已处理），不显示登录页
+    if (!ensureLoggedIn()) {
       Auth.renderLoginPage(app);
       return;
     }
