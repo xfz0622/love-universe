@@ -260,109 +260,104 @@ select.input {
 .link-card-title { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .link-card-url { font-size: var(--text-xs); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 
-/* ===== 图片裁剪器 ===== */
-/* ===== 照片编辑器 - 微信风格 ===== */
-.photo-editor-overlay {
+/* ===== 头像裁剪器（微信风格） ===== */
+.cropper-overlay {
   position: fixed; inset: 0; z-index: 10000;
   background: #000;
   display: flex; flex-direction: column;
-}
-.photo-editor-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; color: #fff; flex-shrink: 0;
-  padding-top: max(12px, env(safe-area-inset-top));
-}
-.photo-editor-back {
-  background: none; border: none; color: #fff; font-size: 15px;
-  padding: 4px 0; cursor: pointer; opacity: 0.9;
-}
-.photo-editor-title { font-size: 16px; font-weight: 500; }
-.photo-editor-done {
-  background: none; border: none; color: #fff; font-size: 15px;
-  padding: 4px 0; cursor: pointer;
-}
-.photo-editor-body {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  overflow: hidden; position: relative;
-}
-.photo-editor-viewport {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.photo-editor-viewport img {
-  max-width: 100%; max-height: 100%;
-  object-fit: contain; transition: transform 0.3s ease;
-}
-.photo-editor-toolbar {
-  display: flex; align-items: center; justify-content: space-around;
-  padding: 16px 20px; flex-shrink: 0;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-  background: rgba(255,255,255,0.05);
-}
-.photo-tool-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  background: none; border: none; color: rgba(255,255,255,0.7);
-  font-size: 11px; cursor: pointer; padding: 8px 16px;
-  transition: opacity 0.2s;
-}
-.photo-tool-btn:active { opacity: 0.5; }
-.photo-tool-btn span { font-size: 11px; }
-
-/* 裁剪模式（嵌入在 photo-editor-body 内） */
-.cropper-overlay {
-  position: fixed; inset: 0; z-index: 10000;
-  background: rgba(0,0,0,0.95);
-  display: flex; flex-direction: column;
+  user-select: none; -webkit-user-select: none;
 }
 .cropper-container {
-  display: flex; flex-direction: column; height: 100%;
+  display: flex; flex-direction: column;
+  height: 100%; width: 100%;
 }
 .cropper-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; color: #fff; flex-shrink: 0;
+  padding-top: max(12px, env(safe-area-inset-top));
 }
-.cropper-title { font-size: 14px; opacity: 0.8; }
 .cropper-close {
-  background: none; border: none; color: #fff; font-size: 22px;
-  padding: 4px 8px; cursor: pointer; opacity: 0.7;
+  width: 32px; height: 32px; line-height: 28px; text-align: center;
+  background: none; border: none; color: #fff; font-size: 26px;
+  padding: 0; cursor: pointer; opacity: 0.85;
 }
-.cropper-viewport {
+.cropper-close:active { opacity: 0.5; }
+.cropper-title {
+  font-size: 16px; font-weight: 500; letter-spacing: 0.02em;
+}
+.cropper-done {
+  background: none; border: none; color: #fff; font-size: 15px;
+  font-weight: 500; padding: 4px 0; cursor: pointer; opacity: 0.9;
+}
+.cropper-done:active { opacity: 0.5; }
+
+/* 舞台：裁切框所在的区域 */
+.cropper-stage {
   flex: 1; position: relative; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  cursor: grab; touch-action: none; background: #000;
+  cursor: grab; touch-action: none;
+  background: #000;
 }
-.cropper-viewport:active { cursor: grabbing; }
+.cropper-stage.grabbing { cursor: grabbing; }
 .cropper-image {
-  position: absolute; max-width: none; user-select: none;
-  -webkit-user-drag: none; pointer-events: none;
+  position: absolute;
+  left: 0; top: 0;
+  max-width: none; max-height: none;
+  user-select: none; -webkit-user-drag: none;
+  pointer-events: none; transform-origin: 0 0;
+  will-change: left, top, width, height;
 }
-.cropper-mask {
+
+/* 固定裁切框：四周黑影，中间透亮 */
+.cropper-frame {
+  position: absolute;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 2;
+}
+.cropper-frame::after {
+  content: '';
   position: absolute; inset: 0;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-  border: 2px solid rgba(255,255,255,0.8);
-  width: min(85vw, 85vh);
-  height: min(85vw, 85vh);
-  border-radius: 4px; pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
 }
+/* 九宫格辅助线 */
+.cropper-grid { position: absolute; inset: 0; }
+.cropper-grid .g-v, .cropper-grid .g-h {
+  position: absolute; background: rgba(255,255,255,0.28);
+}
+.cropper-grid .g-v { top: 0; bottom: 0; width: 1px; }
+.cropper-grid .g-v1 { left: 33.33%; }
+.cropper-grid .g-v2 { left: 66.66%; }
+.cropper-grid .g-h { left: 0; right: 0; height: 1px; }
+.cropper-grid .g-h1 { top: 33.33%; }
+.cropper-grid .g-h2 { top: 66.66%; }
+
 .cropper-footer {
-  padding: 12px 16px; flex-shrink: 0;
-  background: rgba(255,255,255,0.05);
+  padding: 14px 16px; flex-shrink: 0;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: rgba(255,255,255,0.06);
 }
 .cropper-zoom-bar {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  color: rgba(255,255,255,0.7);
 }
-.cropper-zoom-label { color: #fff; font-size: 12px; opacity: 0.6; }
+.cropper-zoom-bar svg { flex-shrink: 0; }
 .cropper-zoom-slider {
   flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
-  background: rgba(255,255,255,0.2); border-radius: 2px; outline: none;
+  background: rgba(255,255,255,0.25); border-radius: 2px; outline: none;
 }
 .cropper-zoom-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 20px; height: 20px;
-  border-radius: 50%; background: #fff; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
-.cropper-actions {
-  display: flex; gap: 10px; justify-content: flex-end;
+.cropper-zoom-slider::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; cursor: pointer; border: none;
 }
-.cropper-actions .btn-ghost { color: #fff; border-color: rgba(255,255,255,0.3); }
-.cropper-actions .btn-primary { background: #fff; color: #000; border: none; }
+.cropper-confirm {
+  width: 100%; padding: 13px; font-size: 15px; font-weight: 600;
+  border-radius: 14px; border: none;
+}
