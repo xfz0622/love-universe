@@ -60,12 +60,6 @@ const DashboardPage = {
 
         <!-- 恋爱时长计数器 -->
         <div id="love-counter"></div>
-        <!-- 设置入口 -->
-        <div style="margin-top:var(--space-md)">
-          <button class="btn btn-ghost btn-sm" id="btn-change-password" style="font-size:12px;color:var(--text-muted)">
-            ⚙️ 修改暗号
-          </button>
-        </div>
       </div>
 
       ${notificationHTML}
@@ -188,8 +182,6 @@ const DashboardPage = {
     this._bindCounterEdit();
     // 绑定头像更换事件
     this._bindPhotoChange();
-    // 绑定设置按钮
-    this._bindSettingsBtn();
     // 卡片入场动画
     Components.animateCards(container, '.dashboard-card, .featured-card');
   },
@@ -215,13 +207,6 @@ const DashboardPage = {
       }, { aspectRatio: 1, outputSize: 400 });
       input.value = ''; // 清空 input 以便重复选择同一文件
     });
-  },
-
-  _bindSettingsBtn() {
-    const btn = document.getElementById('btn-change-password');
-    if (btn) {
-      btn.addEventListener('click', () => Auth._showPasswordChange());
-    }
   },
 
   _bindCounterEdit() {
