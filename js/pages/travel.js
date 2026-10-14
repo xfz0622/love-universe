@@ -142,7 +142,8 @@ const TravelPage = {
   },
 
   _showForm(item = null) {
-    const isEdit = !!item;
+    // 只有带 id 的才是「编辑已有记录」，否则视为「新增」
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑旅行记录' : '添加旅行记录';
     const data = item || {
       location: '', startDate: '', endDate: '', itinerary: '',
