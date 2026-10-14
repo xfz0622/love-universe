@@ -58,9 +58,42 @@ const TravelAI = {
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || data.error) {
+      // 余额/额度不足 → 抛特殊标记，由调用方弹出充值提醒
+      const code = data.code || '';
+      if (code === 'INSUFFICIENT_BALANCE' || code === 'RATE_LIMITED') {
+        const err = new Error(data.error || '额度不足');
+        err.needRecharge = code === 'INSUFFICIENT_BALANCE';
+        err.rateLimited = code === 'RATE_LIMITED';
+        throw err;
+      }
       throw new Error(data.error || `请求失败(${resp.status})`);
     }
     return { content: data.content || '', sources: data.sources || [] };
+  },
+
+  // ===== 充值/额度提醒弹窗 =====
+  _showRechargeNotice(msg, isRateLimit) {
+    if (document.querySelector('#tai-recharge')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'tai-recharge';
+    overlay.className = 'tai-recharge-overlay';
+    const title = isRateLimit ? '⏳ 搜索太频繁啦' : '💳 联网额度用完了';
+    const body = isRateLimit
+      ? '刚才请求有点密集，等一两分钟再试就好啦～<br>也可以先关掉「联网搜索」开关继续用。'
+      : '免费额度用完啦，联网搜索暂时不可用了。<br><br><b>两个办法：</b><br>1️⃣ 先关掉「联网搜索」开关，照样能生成攻略（不花钱）<br>2️⃣ 去智谱开放平台充值，就能继续联网搜最新攻略啦';
+    overlay.innerHTML = `
+      <div class="tai-recharge-card">
+        <div class="tai-recharge-icon">${isRateLimit ? '⏳' : '💳'}</div>
+        <div class="tai-recharge-title">${title}</div>
+        <div class="tai-recharge-body">${body}</div>
+        ${isRateLimit ? '' : '<a class="tai-recharge-link" href="https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys" target="_blank" rel="noopener">👉 前往智谱开放平台充值</a>'}
+        <button class="tai-recharge-ok" id="tai-recharge-ok">知道啦</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('#tai-recharge-ok').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   },
 
   // ===== 打开助手面板 =====
@@ -187,7 +220,12 @@ const TravelAI = {
           }
         });
       } catch (e) {
-        out.innerHTML = `<div class="tai-error">😢 ${this._esc(e.message)}</div><div class="tai-hint">提示：网络不好可关掉联网开关试试；也可切换到 WiFi 再试</div>`;
+        if (e.needRecharge || e.rateLimited) {
+          out.innerHTML = `<div class="tai-error">${e.needRecharge ? '💳 联网额度用完啦' : '⏳ 搜索太频繁'}</div><div class="tai-hint">可先关掉「联网搜索」开关继续生成，或稍后再试</div>`;
+          this._showRechargeNotice(e.message, e.rateLimited);
+        } else {
+          out.innerHTML = `<div class="tai-error">😢 ${this._esc(e.message)}</div><div class="tai-hint">提示：网络不好可关掉联网开关试试；也可切换到 WiFi 再试</div>`;
+        }
       } finally {
         this._busy = false;
         btn.disabled = false;
@@ -232,7 +270,12 @@ const TravelAI = {
         }
         pending.innerHTML = html;
       } catch (e) {
-        pending.innerHTML = `<span style="color:var(--text-secondary)">😢 ${this._esc(e.message)}</span>`;
+        if (e.needRecharge || e.rateLimited) {
+          pending.innerHTML = `<span style="color:var(--text-secondary)">${e.needRecharge ? '💳 联网额度用完啦' : '⏳ 搜索太频繁'}</span>`;
+          this._showRechargeNotice(e.message, e.rateLimited);
+        } else {
+          pending.innerHTML = `<span style="color:var(--text-secondary)">😢 ${this._esc(e.message)}</span>`;
+        }
       } finally {
         this._busy = false;
         send.disabled = false;
