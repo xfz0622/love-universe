@@ -1,8 +1,40 @@
-/* ===== 【我们的恋爱小宇宙】AI 旅行助手 v2 ===== */
+/* ===== 【我们的恋爱小宇宙】AI 旅行助手 v3 ===== */
+// v3: 修复「加入行程」失效 + 聊天记录持久化 + 对话内也能加入行程
 // v2: 联网搜索开关 + 超时控制 + 自动重试 + 友好错误提示
 const TravelAI = {
   _history: [],
   _busy: false,
+
+  // ===== 聊天记录持久化（按用户哈希隔离）=====
+  get _storeKey() {
+    const token = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('love_token')) || 'default';
+    const h = String(token).slice(0, 8);
+    return `love_${h}_ai_chat_history`;
+  },
+
+  _loadHistory() {
+    try {
+      const raw = localStorage.getItem(this._storeKey);
+      const arr = raw ? JSON.parse(raw) : [];
+      this._history = Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      this._history = [];
+    }
+    return this._history;
+  },
+
+  _saveHistory() {
+    try {
+      // 只保留最近 40 条，避免体积过大
+      this._history = this._history.slice(-40);
+      localStorage.setItem(this._storeKey, JSON.stringify(this._history));
+    } catch (e) { /* 忽略存储失败 */ }
+  },
+
+  clearHistory() {
+    this._history = [];
+    try { localStorage.removeItem(this._storeKey); } catch (e) {}
+  },
 
   get _endpoint() {
     const cfg = window.APP_CONFIG && window.APP_CONFIG.supabase;
@@ -99,6 +131,7 @@ const TravelAI = {
   // ===== 打开助手面板 =====
   open() {
     if (document.querySelector('#travel-ai-overlay')) return;
+    this._loadHistory();
     const overlay = document.createElement('div');
     overlay.id = 'travel-ai-overlay';
     overlay.className = 'tai-overlay';
@@ -107,7 +140,7 @@ const TravelAI = {
         <div class="tai-header">
           <button class="tai-back" id="tai-close">×</button>
           <span class="tai-title">✨ AI 旅行助手</span>
-          <span style="width:32px"></span>
+          <button class="tai-clear" id="tai-clear" title="清空聊天记录">🗑️</button>
         </div>
         <div class="tai-tabs">
           <button class="tai-tab active" data-tab="guide">生成攻略</button>
@@ -140,9 +173,7 @@ const TravelAI = {
 
         <!-- AI 对话 -->
         <div class="tai-body" id="tai-panel-chat" style="display:none">
-          <div class="tai-chat" id="tai-chat-list">
-            <div class="tai-msg tai-msg-ai">你好呀～ 我是你们的旅行搭子 🌏 想去哪玩、有什么难题，尽管问我！</div>
-          </div>
+          <div class="tai-chat" id="tai-chat-list"></div>
           <label class="tai-web-toggle" style="padding:6px 2px">
             <input type="checkbox" id="tai-chat-web">
             <span>🔍 联网搜索</span>
@@ -157,9 +188,26 @@ const TravelAI = {
     document.body.appendChild(overlay);
 
     overlay.querySelector('#tai-close').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#tai-clear').addEventListener('click', () => {
+      if (!confirm('确定清空所有聊天记录吗？')) return;
+      this.clearHistory();
+      const list = overlay.querySelector('#tai-chat-list');
+      if (list) {
+        list.innerHTML = '';
+        list.appendChild(this._welcomeMsg());
+      }
+      Utils.showToast('聊天记录已清空');
+    });
     this._bindTabs(overlay);
     this._bindGuide(overlay);
     this._bindChat(overlay);
+  },
+
+  _welcomeMsg() {
+    const div = document.createElement('div');
+    div.className = 'tai-msg tai-msg-ai';
+    div.textContent = '你好呀～ 我是你们的旅行搭子 🌏 想去哪玩、有什么难题，尽管问我！';
+    return div;
   },
 
   _bindTabs(overlay) {
@@ -215,9 +263,7 @@ const TravelAI = {
         });
         out.querySelector('#tai-fill').addEventListener('click', () => {
           overlay.remove();
-          if (window.TravelPage && TravelPage._fillFromAI) {
-            TravelPage._fillFromAI({ destination, days, itinerary: this._lastGuide });
-          }
+          this._fillToTravel({ destination, days, itinerary: this._lastGuide });
         });
       } catch (e) {
         if (e.needRecharge || e.rateLimited) {
@@ -234,19 +280,78 @@ const TravelAI = {
     });
   },
 
+  // 把 AI 内容填充到「添加旅行记录」表单（兼容不同页面暴露方式）
+  _fillToTravel({ destination, days, itinerary }) {
+    const page = (window.TravelPage) ||
+                 (window.App && App.pages && App.pages.travel) ||
+                 (typeof TravelPage !== 'undefined' ? TravelPage : null);
+    if (page && typeof page._fillFromAI === 'function') {
+      page._fillFromAI({ destination, days, itinerary });
+    } else {
+      Utils.showToast('页面未就绪，请刷新后重试');
+    }
+  },
+
   _bindChat(overlay) {
     const input = overlay.querySelector('#tai-chat-text');
     const send = overlay.querySelector('#tai-send');
     const list = overlay.querySelector('#tai-chat-list');
 
-    const pushMsg = (role, text) => {
+    // 渲染单条 AI 消息（含「加入行程」按钮）
+    const renderAI = (container, text, opts = {}) => {
+      let html = this._md(text);
+      html += `<div class="tai-msg-actions">
+          <button class="tai-mini-btn" data-act="add">📥 加入行程</button>
+          <button class="tai-mini-btn" data-act="copy">📋 复制</button>
+        </div>`;
+      container.innerHTML = html;
+      const addBtn = container.querySelector('[data-act="add"]');
+      const copyBtn = container.querySelector('[data-act="copy"]');
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          const dest = opts.destination || this._guessDestination(text);
+          overlay.remove();
+          this._fillToTravel({ destination: dest, days: '', itinerary: text });
+        });
+      }
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard?.writeText(text).then(
+            () => Utils.showToast('已复制'),
+            () => Utils.showToast('复制失败，请长按选择')
+          );
+        });
+      }
+      return container;
+    };
+
+    const pushMsg = (role, text, opts = {}) => {
       const div = document.createElement('div');
       div.className = 'tai-msg ' + (role === 'user' ? 'tai-msg-user' : 'tai-msg-ai');
-      div.innerHTML = role === 'user' ? this._esc(text) : this._md(text);
+      if (role === 'user') {
+        div.innerHTML = this._esc(text);
+      } else {
+        renderAI(div, text, opts);
+      }
       list.appendChild(div);
       list.scrollTop = list.scrollHeight;
       return div;
     };
+
+    // 恢复历史记录
+    list.innerHTML = '';
+    if (this._history.length === 0) {
+      list.appendChild(this._welcomeMsg());
+    } else {
+      this._history.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'tai-msg ' + (m.role === 'user' ? 'tai-msg-user' : 'tai-msg-ai');
+        if (m.role === 'user') div.innerHTML = this._esc(m.content);
+        else renderAI(div, m.content, { destination: m.destination });
+        list.appendChild(div);
+      });
+      list.scrollTop = list.scrollHeight;
+    }
 
     const doSend = async () => {
       if (this._busy) return;
@@ -256,19 +361,44 @@ const TravelAI = {
       input.value = '';
       pushMsg('user', text);
       this._history.push({ role: 'user', content: text });
+      this._saveHistory();
 
       this._busy = true;
       send.disabled = true;
       const pending = pushMsg('assistant', web ? '🔍 正在联网查资料…' : '…');
 
       try {
-        const { content, sources } = await this._call({ mode: 'chat', messages: this._history, web });
-        this._history.push({ role: 'assistant', content });
+        const payloadMsgs = this._history.map(m => ({ role: m.role, content: m.content }));
+        const { content, sources } = await this._call({ mode: 'chat', messages: payloadMsgs, web });
+        const guessedDest = text.length <= 20 ? text : '';
+        this._history.push({ role: 'assistant', content, destination: guessedDest });
+        this._saveHistory();
         let html = this._md(content);
         if (sources.length) {
           html += `<div class="tai-sources"><div class="tai-sources-title">🔗 来源</div>${sources.map(s => `<a class="tai-source" href="${s.link}" target="_blank" rel="noopener">${this._esc(s.title)}</a>`).join('')}</div>`;
         }
+        html += `<div class="tai-msg-actions">
+            <button class="tai-mini-btn" data-act="add">📥 加入行程</button>
+            <button class="tai-mini-btn" data-act="copy">📋 复制</button>
+          </div>`;
         pending.innerHTML = html;
+        const addBtn = pending.querySelector('[data-act="add"]');
+        const copyBtn = pending.querySelector('[data-act="copy"]');
+        if (addBtn) {
+          addBtn.addEventListener('click', () => {
+            const dest = text.length <= 20 ? text : '';
+            overlay.remove();
+            this._fillToTravel({ destination: dest, days: '', itinerary: content });
+          });
+        }
+        if (copyBtn) {
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard?.writeText(content).then(
+              () => Utils.showToast('已复制'),
+              () => Utils.showToast('复制失败，请长按选择')
+            );
+          });
+        }
       } catch (e) {
         if (e.needRecharge || e.rateLimited) {
           pending.innerHTML = `<span style="color:var(--text-secondary)">${e.needRecharge ? '💳 联网额度用完啦' : '⏳ 搜索太频繁'}</span>`;
@@ -276,6 +406,9 @@ const TravelAI = {
         } else {
           pending.innerHTML = `<span style="color:var(--text-secondary)">😢 ${this._esc(e.message)}</span>`;
         }
+        // 失败的这轮不进历史
+        this._history.pop();
+        this._history.pop();
       } finally {
         this._busy = false;
         send.disabled = false;
@@ -285,7 +418,17 @@ const TravelAI = {
 
     send.addEventListener('click', doSend);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
-    setTimeout(() => input.focus(), 200);
+    setTimeout(() => input.scrollIntoView && input.focus(), 200);
+  },
+
+  // 从 AI 文本里猜目的地（用于「加入行程」预填地点）
+  _guessDestination(text) {
+    const m = String(text).match(/【(.+?)】/);
+    if (m) return m[1].slice(0, 20);
+    const t = String(text).replace(/[#*>\-]/g, '').trim();
+    const mm = t.match(/^([\u4e00-\u9fa5]{2,6})(旅行|旅游|攻略|行程|自由行)/);
+    if (mm) return mm[1];
+    return '';
   },
 
   _md(text) {
