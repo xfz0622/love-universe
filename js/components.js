@@ -433,371 +433,305 @@ const Components = {
   showImageCropper(file, onCrop, opts = {}) {
     const aspectRatio = opts.aspectRatio || 1;
     const outputSize = opts.outputSize || 400;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const imgSrc = e.target.result;
-      this._renderPhotoEditor(imgSrc, aspectRatio, outputSize, onCrop, isMobile);
+      this._renderCropper(e.target.result, aspectRatio, outputSize, onCrop);
+    };
+    reader.onerror = () => {
+      if (typeof Utils !== 'undefined' && Utils.showToast) Utils.showToast('图片读取失败，请重试');
     };
     reader.readAsDataURL(file);
   },
 
   /**
-   * 第一阶段：照片预览模式（显示完整照片，底部工具栏）
+   * 头像裁切器（参考微信）
+   * - 固定裁切框（按 aspectRatio），图片在其下方自由拖动 / 双指缩放 / 滑块缩放
+   * - 松手后图片自动吸附，保证裁切框始终被图片完全覆盖（不露白）
+   * - 输出的就是裁切框内的内容，坐标按原始像素精确反算
    */
-  _renderPhotoEditor(imgSrc, aspectRatio, outputSize, onCrop, isMobile) {
+  _renderCropper(imgSrc, aspectRatio, outputSize, onCrop) {
     const overlay = document.createElement('div');
-    overlay.className = 'photo-editor-overlay';
+    overlay.className = 'cropper-overlay';
     overlay.innerHTML = `
-      <div class="photo-editor-header">
-        <button class="photo-editor-back">取消</button>
-        <span class="photo-editor-title">编辑照片</span>
-        <button class="photo-editor-done" style="font-weight:600">确定</button>
-      </div>
-      <div class="photo-editor-body" id="photo-editor-body">
-        <div class="photo-editor-viewport" id="photo-editor-vp">
-          <img id="photo-editor-img" src="${imgSrc}" alt="preview">
+      <div class="cropper-container">
+        <div class="cropper-header">
+          <button class="cropper-close" id="cropper-cancel" aria-label="取消">×</button>
+          <span class="cropper-title">裁剪头像</span>
+          <button class="cropper-done" id="cropper-done">完成</button>
         </div>
-      </div>
-      <div class="photo-editor-toolbar">
-        <button class="photo-tool-btn" id="photo-tool-crop">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/>
-          </svg>
-          <span>裁切</span>
-        </button>
-        <button class="photo-tool-btn" id="photo-tool-rotate">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-          </svg>
-          <span>旋转</span>
-        </button>
-        <button class="photo-tool-btn" id="photo-tool-reset">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>
-          </svg>
-          <span>还原</span>
-        </button>
+        <div class="cropper-stage" id="cropper-stage">
+          <img class="cropper-image" id="cropper-img" src="${imgSrc}" alt="crop" draggable="false">
+          <div class="cropper-frame" id="cropper-frame">
+            <div class="cropper-grid">
+              <span class="g-v g-v1"></span><span class="g-v g-v2"></span>
+              <span class="g-h g-h1"></span><span class="g-h g-h2"></span>
+            </div>
+          </div>
+        </div>
+        <div class="cropper-footer">
+          <div class="cropper-zoom-bar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            <input type="range" class="cropper-zoom-slider" id="cropper-slider" min="0" max="1" step="0.001" value="0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </div>
+          <button class="btn btn-primary cropper-confirm" id="cropper-confirm">完成裁切</button>
+        </div>
       </div>
     `;
     document.body.appendChild(overlay);
 
-    const img = overlay.querySelector('#photo-editor-img');
-    const vp = overlay.querySelector('#photo-editor-vp');
-    const self = this;
+    const stage = overlay.querySelector('#cropper-stage');
+    const img = overlay.querySelector('#cropper-img');
+    const frame = overlay.querySelector('#cropper-frame');
+    const slider = overlay.querySelector('#cropper-slider');
 
-    let rotation = 0;
-    let imgNaturalW = 0, imgNaturalH = 0;
-    let isCropMode = false;
+    let imgW = 0, imgH = 0;           // 图片原始像素
+    let stageW = 0, stageH = 0;       // 舞台尺寸
+    let fw = 0, fh = 0;               // 裁切框尺寸
+    let fx = 0, fy = 0;               // 裁切框左上角（相对舞台）
+    let scale = 1;                    // 当前缩放（图片显示尺寸 = 原始尺寸 * scale）
+    let minScale = 1, maxScale = 4;
+    let tx = 0, ty = 0;               // 图片左上角位置（相对舞台）
+    let dragging = false, startX = 0, startY = 0, startTx = 0, startTy = 0;
+    let pinchDist = 0, pinchScale = 1, pinchCx = 0, pinchCy = 0;
 
-    // ===== 初始化：完整显示照片 =====
-    const fitImage = () => {
-      if (!imgNaturalW || !imgNaturalH) return;
-      const vpW = vp.clientWidth;
-      const vpH = vp.clientHeight;
-      const imgRatio = imgNaturalW / imgNaturalH;
-      let w, h;
-      if (rotation % 180 === 0) {
-        if (vpW / vpH > imgRatio) { h = vpH; w = h * imgRatio; }
-        else { w = vpW; h = w / imgRatio; }
+    const layout = () => {
+      stageW = stage.clientWidth;
+      stageH = stage.clientHeight;
+
+      // 计算裁切框：留出边距，按 aspectRatio 适配
+      const margin = 28;
+      const availW = stageW - margin * 2;
+      const availH = stageH - margin * 2;
+      if (aspectRatio >= 1) {
+        fw = Math.min(availW, availH * aspectRatio);
+        fh = fw / aspectRatio;
       } else {
-        const rRatio = 1 / imgRatio;
-        if (vpW / vpH > rRatio) { h = vpH; w = h * rRatio; }
-        else { w = vpW; h = w / rRatio; }
+        fh = Math.min(availH, availW / aspectRatio);
+        fw = fh * aspectRatio;
       }
-      img.style.width = `${w}px`;
-      img.style.height = `${h}px`;
-      img.style.transform = `rotate(${rotation}deg)`;
+      fx = (stageW - fw) / 2;
+      fy = (stageH - fh) / 2;
+
+      frame.style.width = `${fw}px`;
+      frame.style.height = `${fh}px`;
+      frame.style.left = `${fx}px`;
+      frame.style.top = `${fy}px`;
+      frame.style.borderRadius = aspectRatio === 1 ? '50%' : '8px';
+
+      // 最小缩放：让图片刚好覆盖裁切框
+      minScale = Math.max(fw / imgW, fh / imgH);
+      maxScale = minScale * 4;
     };
 
-    if (img.complete) {
-      imgNaturalW = img.naturalWidth;
-      imgNaturalH = img.naturalHeight;
-      fitImage();
-    } else {
-      img.onload = () => {
-        imgNaturalW = img.naturalWidth;
-        imgNaturalH = img.naturalHeight;
-        fitImage();
-      };
-    }
-
-    window.addEventListener('resize', fitImage);
-
-    // ===== 工具栏按钮 =====
-    const close = () => {
-      window.removeEventListener('resize', fitImage);
-      overlay.remove();
+    const clamp = () => {
+      // 保证图片始终完全覆盖裁切框
+      const dispW = imgW * scale;
+      const dispH = imgH * scale;
+      const minTx = fx + fw - dispW;
+      const maxTx = fx;
+      const minTy = fy + fh - dispH;
+      const maxTy = fy;
+      tx = Math.min(maxTx, Math.max(minTx, tx));
+      ty = Math.min(maxTy, Math.max(minTy, ty));
     };
 
-    // 取消
-    overlay.querySelector('.photo-editor-back').addEventListener('click', close);
-
-    // 确定：直接输出当前可见区域（完整照片或裁剪结果）
-    overlay.querySelector('.photo-editor-done').addEventListener('click', () => {
-      if (isCropMode) {
-        // 裁剪模式：触发裁剪器确定
-        const cropConfirm = overlay.querySelector('.cropper-confirm');
-        if (cropConfirm) cropConfirm.click();
-        return;
-      }
-      // 预览模式：输出完整照片
-      const canvas = document.createElement('canvas');
-      if (rotation % 180 === 0) {
-        canvas.width = outputSize;
-        canvas.height = Math.round(outputSize / (imgNaturalW / imgNaturalH));
-      } else {
-        canvas.width = outputSize;
-        canvas.height = Math.round(outputSize / (imgNaturalH / imgNaturalW));
-      }
-      const ctx = canvas.getContext('2d');
-      const naturalImg = new Image();
-      naturalImg.onload = () => {
-        if (rotation > 0) {
-          ctx.translate(canvas.width/2, canvas.height/2);
-          ctx.rotate(rotation * Math.PI / 180);
-          ctx.drawImage(naturalImg, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
-        } else {
-          ctx.drawImage(naturalImg, 0, 0, canvas.width, canvas.height);
-        }
-        const base64 = canvas.toDataURL('image/jpeg', 0.9);
-        close();
-        if (onCrop) onCrop(base64);
-      };
-      naturalImg.src = imgSrc;
-    });
-
-    // 旋转
-    overlay.querySelector('#photo-tool-rotate').addEventListener('click', () => {
-      rotation = (rotation + 90) % 360;
-      fitImage();
-    });
-
-    // 还原
-    overlay.querySelector('#photo-tool-reset').addEventListener('click', () => {
-      rotation = 0;
-      fitImage();
-    });
-
-    // ===== 裁切按钮：进入裁剪模式 =====
-    overlay.querySelector('#photo-tool-crop').addEventListener('click', () => {
-      if (isCropMode) return;
-      isCropMode = true;
-      // 隐藏工具栏
-      overlay.querySelector('.photo-editor-toolbar').style.display = 'none';
-      // 替换 body 内容为裁剪器
-      const body = overlay.querySelector('.photo-editor-body');
-      self._renderCropMode(body, imgSrc, aspectRatio, outputSize, onCrop, () => {
-        // 退出裁剪模式回调
-        isCropMode = false;
-        overlay.querySelector('.photo-editor-toolbar').style.display = '';
-        // 恢复预览模式
-        body.innerHTML = `
-          <div class="photo-editor-viewport" id="photo-editor-vp">
-            <img id="photo-editor-img" src="${imgSrc}" alt="preview">
-          </div>
-        `;
-        const newImg = body.querySelector('#photo-editor-img');
-        newImg.onload = () => {
-          imgNaturalW = newImg.naturalWidth;
-          imgNaturalH = newImg.naturalHeight;
-          fitImage();
-        };
-        // 重新绑定 vp/img 引用
-        // 注意：这里 img 和 vp 还是旧的引用，但 fitImage 用的是 id 查找
-      }, () => {
-        // 裁剪完成回调：替换 imgSrc 为裁剪结果
-        // 简化：直接关闭
-        close();
-      });
-    });
-  },
-
-  /**
-   * 第二阶段：裁剪模式（替换 body 内容）
-   */
-  _renderCropMode(bodyEl, imgSrc, aspectRatio, outputSize, onCrop, onExitCrop, onCropDone) {
-    bodyEl.innerHTML = `
-      <div class="cropper-viewport" id="cropper-vp">
-        <img class="cropper-image" id="cropper-img" src="${imgSrc}" alt="crop">
-        <div class="cropper-mask"></div>
-      </div>
-      <div class="cropper-footer">
-        <div class="cropper-zoom-bar">
-          <span class="cropper-zoom-label">缩放</span>
-          <input type="range" class="cropper-zoom-slider" id="cropper-slider" min="0.5" max="3" step="0.01" value="1">
-        </div>
-        <div class="cropper-actions">
-          <button class="btn btn-ghost cropper-cancel">取消裁切</button>
-          <button class="btn btn-primary cropper-confirm">完成裁切</button>
-        </div>
-      </div>
-    `;
-
-    const overlay = bodyEl.closest('.photo-editor-overlay');
-    const img = bodyEl.querySelector('#cropper-img');
-    const viewport = bodyEl.querySelector('#cropper-vp');
-    const slider = bodyEl.querySelector('#cropper-slider');
-
-    let scale = 1;
-    let offsetX = 0, offsetY = 0;
-    let isDragging = false;
-    let startX, startY, startOffX, startOffY;
-    let lastDist = 0;
-    let imgNaturalW, imgNaturalH;
-
-    const clampOffset = () => {
-      if (!imgNaturalW || !imgNaturalH) return;
-      const vpW = viewport.clientWidth;
-      const vpH = viewport.clientHeight;
-      const w = imgNaturalW * scale;
-      const h = imgNaturalH * scale;
-      const maxX = Math.max(0, (w - vpW) / 2);
-      const maxY = Math.max(0, (h - vpH) / 2);
-      offsetX = Math.max(-maxX, Math.min(maxX, offsetX));
-      offsetY = Math.max(-maxY, Math.min(maxY, offsetY));
+    const render = () => {
+      clamp();
+      const dispW = imgW * scale;
+      const dispH = imgH * scale;
+      img.style.width = `${dispW}px`;
+      img.style.height = `${dispH}px`;
+      img.style.left = `${tx}px`;
+      img.style.top = `${ty}px`;
     };
 
-    const updateTransform = () => {
-      clampOffset();
-      img.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+    const syncSlider = () => {
+      // 滑块 0~1 映射到 minScale~maxScale
+      const t = maxScale > minScale ? (scale - minScale) / (maxScale - minScale) : 0;
+      slider.value = String(Math.max(0, Math.min(1, t)));
+    };
+
+    const centerImage = () => {
+      const dispW = imgW * scale;
+      const dispH = imgH * scale;
+      tx = fx + (fw - dispW) / 2;
+      ty = fy + (fh - dispH) / 2;
     };
 
     const initImage = () => {
-      imgNaturalW = img.naturalWidth;
-      imgNaturalH = img.naturalHeight;
-      if (!imgNaturalW || !imgNaturalH) return;
-      const vpW = viewport.clientWidth || viewport.parentElement.clientWidth;
-      const vpH = viewport.clientHeight || viewport.parentElement.clientHeight;
-      scale = Math.min(vpW / imgNaturalW, vpH / imgNaturalH);
-      if (scale < 0.5) scale = 0.5;
-      if (scale > 3) scale = 3;
-      slider.value = scale;
-      offsetX = 0;
-      offsetY = 0;
-
-      const mask = bodyEl.querySelector('.cropper-mask');
-      if (mask) {
-        const imgRatio = imgNaturalW / imgNaturalH;
-        const maxMaskSize = Math.min(vpW, vpH) * 0.85;
-        if (imgRatio >= 1) {
-          mask.style.width = `${maxMaskSize}px`;
-          mask.style.height = `${maxMaskSize / imgRatio}px`;
-        } else {
-          mask.style.height = `${maxMaskSize}px`;
-          mask.style.width = `${maxMaskSize * imgRatio}px`;
-        }
+      imgW = img.naturalWidth;
+      imgH = img.naturalHeight;
+      if (!imgW || !imgH) {
+        if (typeof Utils !== 'undefined' && Utils.showToast) Utils.showToast('图片加载失败');
+        return;
       }
-      updateTransform();
+      layout();
+      scale = minScale;      // 初始刚好铺满裁切框
+      centerImage();
+      syncSlider();
+      render();
     };
 
-    if (img.complete) { initImage(); } else { img.onload = initImage; }
+    if (img.complete && img.naturalWidth) initImage();
+    else img.onload = initImage;
 
-    slider.addEventListener('input', () => { scale = parseFloat(slider.value); updateTransform(); });
+    const onResize = () => {
+      if (!imgW || !imgH) return;
+      const prevMin = minScale;
+      layout();
+      // 保持相对缩放不变
+      scale = Math.max(minScale, Math.min(maxScale, scale * (minScale / prevMin)));
+      centerImage();
+      syncSlider();
+      render();
+    };
+    window.addEventListener('resize', onResize);
 
-    viewport.addEventListener('mousedown', (e) => {
+    // ===== 缩放核心：以某锚点为中心缩放，锚点保持不动 =====
+    const zoomAt = (clientX, clientY, newScale) => {
+      newScale = Math.max(minScale, Math.min(maxScale, newScale));
+      const rect = stage.getBoundingClientRect();
+      const px = clientX - rect.left;   // 锚点在舞台坐标系
+      const py = clientY - rect.top;
+      const ratio = newScale / scale;
+      // 锚点相对图片左上角的位置按比例放大
+      tx = px - (px - tx) * ratio;
+      ty = py - (py - ty) * ratio;
+      scale = newScale;
+      render();
+      syncSlider();
+    };
+
+    // ===== 鼠标拖动 =====
+    stage.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      isDragging = true;
+      dragging = true;
       startX = e.clientX; startY = e.clientY;
-      startOffX = offsetX; startOffY = offsetY;
+      startTx = tx; startTy = ty;
+      stage.classList.add('grabbing');
     });
-
     const onMouseMove = (e) => {
-      if (!isDragging) return;
-      offsetX = startOffX + (e.clientX - startX);
-      offsetY = startOffY + (e.clientY - startY);
-      updateTransform();
+      if (!dragging) return;
+      tx = startTx + (e.clientX - startX);
+      ty = startTy + (e.clientY - startY);
+      render();
     };
-    const onMouseUp = () => { isDragging = false; };
+    const onMouseUp = () => { dragging = false; stage.classList.remove('grabbing'); };
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    viewport.addEventListener('touchstart', (e) => {
+    // ===== 触摸：单指拖动，双指缩放 =====
+    stage.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
-        isDragging = true;
+        dragging = true;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-        startOffX = offsetX; startOffY = offsetY;
+        startTx = tx; startTy = ty;
       } else if (e.touches.length === 2) {
-        isDragging = false;
-        lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        dragging = false;
+        pinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        pinchScale = scale;
+        pinchCx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinchCy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       }
     }, { passive: true });
 
-    viewport.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1 && isDragging) {
+    stage.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && dragging) {
         e.preventDefault();
-        offsetX = startOffX + (e.touches[0].clientX - startX);
-        offsetY = startOffY + (e.touches[0].clientY - startY);
-        updateTransform();
+        tx = startTx + (e.touches[0].clientX - startX);
+        ty = startTy + (e.touches[0].clientY - startY);
+        render();
       } else if (e.touches.length === 2) {
         e.preventDefault();
-        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        if (lastDist > 0) {
-          scale *= dist / lastDist;
-          scale = Math.max(0.5, Math.min(3, scale));
-          slider.value = scale;
-          updateTransform();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (pinchDist > 0) {
+          zoomAt(pinchCx, pinchCy, pinchScale * (dist / pinchDist));
         }
-        lastDist = dist;
       }
     }, { passive: false });
 
-    viewport.addEventListener('touchend', () => { isDragging = false; lastDist = 0; });
-    viewport.addEventListener('wheel', (e) => {
+    stage.addEventListener('touchend', () => { dragging = false; pinchDist = 0; });
+
+    // ===== 滚轮缩放（桌面）=====
+    stage.addEventListener('wheel', (e) => {
       e.preventDefault();
-      scale += e.deltaY > 0 ? -0.05 : 0.05;
-      scale = Math.max(0.5, Math.min(3, scale));
-      slider.value = scale;
-      updateTransform();
+      const factor = e.deltaY > 0 ? 0.92 : 1.08;
+      zoomAt(e.clientX, e.clientY, scale * factor);
+    }, { passive: false });
+
+    // ===== 滑块缩放（以裁切框中心为锚点）=====
+    slider.addEventListener('input', () => {
+      const t = parseFloat(slider.value);
+      const newScale = minScale + (maxScale - minScale) * t;
+      const rect = stage.getBoundingClientRect();
+      zoomAt(rect.left + fx + fw / 2, rect.top + fy + fh / 2, newScale);
     });
 
+    // ===== 清理 =====
     const cleanup = () => {
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
+    const close = () => { cleanup(); overlay.remove(); };
 
-    bodyEl.querySelector('.cropper-cancel').addEventListener('click', () => {
-      cleanup();
-      if (onExitCrop) onExitCrop();
-    });
+    overlay.querySelector('#cropper-cancel').addEventListener('click', close);
 
-    bodyEl.querySelector('.cropper-confirm').addEventListener('click', () => {
-      cleanup();
-      const vpW = viewport.clientWidth;
-      const vpH = viewport.clientHeight;
-      const mask = bodyEl.querySelector('.cropper-mask');
-      const maskW = mask ? parseFloat(mask.style.width) || mask.offsetWidth : Math.min(vpW, vpH) * 0.85;
-      const maskH = mask ? parseFloat(mask.style.height) || mask.offsetHeight : Math.min(vpW, vpH) * 0.85;
-      const cropSize = Math.min(maskW, maskH);
-      const cropW = aspectRatio >= 1 ? cropSize : cropSize * aspectRatio;
-      const cropH = cropSize / aspectRatio;
+    // ===== 完成：按裁切框反算原图坐标并输出 =====
+    const confirm = () => {
+      // 裁切框相对图片左上角的偏移（显示像素）
+      const dx = fx - tx;
+      const dy = fy - ty;
+      // 换算到原图像素
+      const srcX = dx / scale;
+      const srcY = dy / scale;
+      const srcW = fw / scale;
+      const srcH = fh / scale;
 
       const canvas = document.createElement('canvas');
       canvas.width = outputSize;
       canvas.height = Math.round(outputSize / aspectRatio);
       const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const imgW = imgNaturalW * scale;
-      const imgH = imgNaturalH * scale;
-      const imgLeft = (vpW - imgW) / 2 + offsetX;
-      const imgTop = (vpH - imgH) / 2 + offsetY;
-      const cropLeft = (vpW - cropW) / 2;
-      const cropTop = (vpH - cropH) / 2;
+      const naturalImg = new Image();
+      naturalImg.onload = () => {
+        ctx.drawImage(
+          naturalImg,
+          srcX, srcY, srcW, srcH,
+          0, 0, canvas.width, canvas.height
+        );
+        let base64;
+        try {
+          base64 = canvas.toDataURL('image/jpeg', 0.92);
+        } catch (err) {
+          if (typeof Utils !== 'undefined' && Utils.showToast) Utils.showToast('裁剪失败，请重试');
+          close();
+          return;
+        }
+        close();
+        if (onCrop) onCrop(base64);
+      };
+      naturalImg.onerror = () => {
+        if (typeof Utils !== 'undefined' && Utils.showToast) Utils.showToast('裁剪失败，请重试');
+        close();
+      };
+      naturalImg.src = imgSrc;
+    };
 
-      const srcX = (cropLeft - imgLeft) / scale;
-      const srcY = (cropTop - imgTop) / scale;
-      const srcW = cropW / scale;
-      const srcH = cropH / scale;
-
-      ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outputSize, Math.round(outputSize / aspectRatio));
-      const base64 = canvas.toDataURL('image/jpeg', 0.9);
-
-      // 回到预览模式并更新图片
-      if (onExitCrop) onExitCrop();
-
-      if (onCrop) onCrop(base64);
-    });
+    overlay.querySelector('#cropper-confirm').addEventListener('click', confirm);
+    overlay.querySelector('#cropper-done').addEventListener('click', confirm);
   },
 
   /**
