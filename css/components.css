@@ -484,3 +484,22 @@ select.input {
   border: none; border-radius: 12px; cursor: pointer;
 }
 .tai-send:disabled { opacity: 0.5; }
+
+/* AI助手 v2: 联网开关与来源 */
+.tai-web-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; margin-bottom: 12px; user-select: none;
+}
+.tai-web-toggle input { accent-color: var(--text-primary); width: 16px; height: 16px; }
+.tai-sources {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+}
+.tai-sources-title { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.tai-source {
+  display: block; font-size: 12px; color: var(--text-secondary);
+  text-decoration: none; margin: 4px 0; word-break: break-all;
+}
+.tai-source:active { opacity: 0.6; }
+.tai-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
