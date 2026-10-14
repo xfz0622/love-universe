@@ -31,12 +31,15 @@ const TravelPage = {
     const wishCount = Store.getTravels().filter(t => t.tags && t.tags.includes('想去')).length;
     return `
       <div class="page-header">
-        <div style="display:flex;align-items:center;gap:var(--space-md)">
-          <div style="width:4px;height:24px;background:var(--text-primary);border-radius:2px"></div>
-          <div>
-            <h2 class="page-header-title">旅行记录</h2>
-            <p class="page-header-subtitle">已打卡${doneCount}次 · ${wishCount}个想去的地方</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-md)">
+          <div style="display:flex;align-items:center;gap:var(--space-md)">
+            <div style="width:4px;height:24px;background:var(--text-primary);border-radius:2px"></div>
+            <div>
+              <h2 class="page-header-title">旅行记录</h2>
+              <p class="page-header-subtitle">已打卡${doneCount}次 · ${wishCount}个想去的地方</p>
+            </div>
           </div>
+          <button class="tai-entry-btn" id="travel-ai-btn">✨ AI助手</button>
         </div>
       </div>
     `;
@@ -124,6 +127,11 @@ const TravelPage = {
     this.container.querySelector('#add-travel-btn').addEventListener('click', () => {
       this._showForm();
     });
+
+    const aiBtn = this.container.querySelector('#travel-ai-btn');
+    if (aiBtn && window.TravelAI) {
+      aiBtn.addEventListener('click', () => TravelAI.open());
+    }
 
     this.container.querySelectorAll('.card[data-id]').forEach(card => {
       card.addEventListener('click', () => {
@@ -282,5 +290,25 @@ const TravelPage = {
       });
       fileInput.value = '';
     });
+  },
+
+  // 用 AI 生成的攻略预填「添加旅行记录」表单
+  _fillFromAI({ destination, days, itinerary }) {
+    const today = new Date();
+    const start = today.toISOString().slice(0, 10);
+    const end = new Date(today.getTime() + ((parseInt(days) || 1) - 1) * 86400000)
+      .toISOString().slice(0, 10);
+
+    this._showForm({
+      location: destination || '',
+      startDate: start,
+      endDate: end,
+      itinerary: itinerary || '',
+      photos: [],
+      cost: 0,
+      notes: '',
+      tags: ['想去']
+    });
+    if (Utils.showToast) Utils.showToast('已填充，可自行修改后保存');
   }
 };
