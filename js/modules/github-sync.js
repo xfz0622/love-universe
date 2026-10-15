@@ -3,7 +3,7 @@ window.GitHubSync = {
   _config: null,
   _sha: null,
   _syncInProgress: false,
-  _timeout: 5000, // 5秒超时，不给用户添堵
+  _timeout: 15000, // 15秒超时（数据文件已3MB+，5秒在手机网络上不够）
 
   get config() {
     if (!this._config) this._config = APP_CONFIG.github;
@@ -35,6 +35,41 @@ window.GitHubSync = {
     }
   },
 
+  // 读取数据文件（兼容大文件：>1MB 时 GitHub 不返回 base64 内容，需用 raw 方式二次读取）
+  async _readFile(dataFile, noStore) {
+    const { owner, repo, apiBase } = this.config;
+    const url = `${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`;
+    const headers = noStore ? { ...this._headers(), 'cache-control': 'no-cache' } : this._headers();
+
+    // 第一步：拿 sha + 元信息
+    const resp = await this._fetch(url, { headers, cache: noStore ? 'no-store' : 'default' });
+    if (resp.status === 404) return { sha: null, data: null };
+    if (!resp.ok) throw new Error(`读取失败: ${resp.status}`);
+    const item = await resp.json();
+    const sha = item.sha;
+
+    let text;
+    if (item.encoding === 'base64' && item.content) {
+      // 小文件：直接解 base64
+      const binary = atob(item.content.replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      text = new TextDecoder('utf-8').decode(bytes);
+    } else {
+      // 大文件（encoding=none, content=""）：用 raw 方式读原文
+      const rawResp = await this._fetch(url, {
+        headers: { ...this._headers(), 'Accept': 'application/vnd.github.raw' },
+        cache: noStore ? 'no-store' : 'default'
+      });
+      if (!rawResp.ok) throw new Error(`读取原文失败: ${rawResp.status}`);
+      text = await rawResp.text();
+    }
+
+    return { sha, data: JSON.parse(text) };
+  },
+
   // 确保仓库和文件存在
   async initRepo() {
     const { owner, repo, dataFile, apiBase } = this.config;
@@ -62,28 +97,14 @@ window.GitHubSync = {
       console.log('✅ 仓库已创建');
     }
 
-    resp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
-      headers: this._headers()
-    });
-
-    if (resp.ok) {
-      const item = await resp.json();
-      this._sha = item.sha;
-      const binary = atob(item.content);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const decoded = new TextDecoder('utf-8').decode(bytes);
-      const data = JSON.parse(decoded);
+    const { sha, data } = await this._readFile(dataFile, false);
+    this._sha = sha;
+    if (data) {
       console.log('📥 已加载远程数据, version:', data._version || 0);
       return data;
-    } else if (resp.status === 404) {
-      console.log('📝 首次使用，创建初始数据');
-      return null;
-    } else {
-      throw new Error(`读取仓库失败: ${resp.status}`);
     }
+    console.log('📝 首次使用，创建初始数据');
+    return null;
   },
 
   // 从 GitHub 拉取数据
@@ -91,25 +112,9 @@ window.GitHubSync = {
     if (this._syncInProgress) return null;
     this._syncInProgress = true;
     try {
-      const { owner, repo, dataFile, apiBase } = this.config;
-      const resp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
-        headers: this._headers(),
-        cache: 'no-store'
-      });
-
-      if (resp.status === 404) return null;
-      if (!resp.ok) throw new Error(`拉取失败: ${resp.status}`);
-
-      const item = await resp.json();
-      this._sha = item.sha;
-      // GitHub 返回 base64，用 Uint8Array 解码 utf-8
-      const binary = atob(item.content);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const decoded = new TextDecoder('utf-8').decode(bytes);
-      const data = JSON.parse(decoded);
+      const { dataFile } = this.config;
+      const { sha, data } = await this._readFile(dataFile, true);
+      this._sha = sha;
       return data;
     } catch (e) {
       console.warn('GitHub pull 失败:', e.message);
