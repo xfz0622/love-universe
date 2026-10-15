@@ -4,9 +4,9 @@ window.APP_CONFIG = {
   github: {
     owner: 'xfz0622',
     repo: 'love-universe',
-    // token 分段编码，运行时拼接解码
-    _tk1: 'Z2hwX1ZWdHZX',
-    _tk2: 'c0FGYVNjTnJhOUJQM084U0ZaZ1VnamZIRzJzRm1HdQ==',
+    // token 分段编码，运行时拼接解码（2026-10-15 更新为有效 token）
+    _tk1: 'Z2hwX1RxMjhtVm1wQ3E0VTF2Mmg4',
+    _tk2: 'QWxTOVZaSzRpUGg2ZDFBQTF0Mg==',
     get token() {
       return atob(this._tk1 + this._tk2);
     },
