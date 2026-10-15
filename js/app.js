@@ -81,6 +81,17 @@ const App = {
     window.addEventListener('beforeunload', () => {
       if (Components._counterInterval) clearInterval(Components._counterInterval);
     });
+
+    // 页面关闭/切到后台前，尽量把未同步的改动推送到 GitHub
+    window.addEventListener('beforeunload', () => {
+      try { if (Store && Store.flushPush) Store.flushPush(); } catch (e) {}
+    });
+    // 移动端更可靠：切到后台时也推一次
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        try { if (Store && Store.flushPush) Store.flushPush(); } catch (e) {}
+      }
+    });
   },
 
   // 登录成功后重新初始化
