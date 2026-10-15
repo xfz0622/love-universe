@@ -81,6 +81,8 @@ const Store = {
   _syncInProgress: false,
   _autoSaveTimeout: null,
   _hasPendingChange: false,
+  _remoteLoaded: false,
+  _pendingBeforeRemote: false,
   _initialized: false,
 
   // 初始化
@@ -127,6 +129,7 @@ const Store = {
 
         // 如果远程数据没有版本号（旧格式），先推送本地数据赋予版本号
         if (!remoteData._version) {
+          this._remoteLoaded = true;
           this._schedulePush();
           return;
         }
@@ -152,16 +155,30 @@ const Store = {
           }
         } else if (remoteVersion < localVersion) {
           // 本地更新，推送到 GitHub
+          this._remoteLoaded = true;
           this._schedulePush();
         }
         // remoteVersion === localVersion: 无需操作，本地数据优先
+
+        // 远程数据已成功加载，解除推送保护
+        this._remoteLoaded = true;
+        // 加载期间若有改动被拦截，补推一次
+        if (this._pendingBeforeRemote) {
+          this._pendingBeforeRemote = false;
+          this._schedulePush();
+        }
       } else if (!remoteData) {
-        // 首次使用，推送本地数据
+        // 真正首次使用（仓库里没有该文件），推送本地数据
+        this._remoteLoaded = true;
         await GitHubSync.push(this.data);
         console.log('✅ 初始数据已上传 GitHub');
+      } else {
+        // remoteData 存在但没有 profile：视为异常，不放行推送，避免覆盖
+        console.warn('⚠️ 远程数据异常（无profile），本次跳过推送以保护仓库数据');
       }
     } catch (e) {
-      console.warn('后台同步失败（不影响使用）:', e.message);
+      // 加载失败（超时/网络）：保持推送保护，防止空数据覆盖仓库
+      console.warn('后台同步失败（已保护仓库数据，不推送）:', e.message);
     }
   },
 
@@ -549,6 +566,12 @@ const Store = {
   },
 
   _schedulePush() {
+    // 关键保护：远程数据尚未加载成功时，禁止推送，
+    // 否则会把本地默认空数据覆盖掉仓库里的正式数据
+    if (!this._remoteLoaded) {
+      this._pendingBeforeRemote = true;
+      return;
+    }
     if (this._autoSaveTimeout) clearTimeout(this._autoSaveTimeout);
     this._autoSaveTimeout = setTimeout(() => {
       this._hasPendingChange = false;
@@ -560,6 +583,7 @@ const Store = {
 
   // 页面关闭/切后台前，尽量把未同步的改动推上去
   flushPush() {
+    if (!this._remoteLoaded) return; // 远程数据没加载好，绝不推送
     if (!this._hasPendingChange) return;
     if (this._autoSaveTimeout) { clearTimeout(this._autoSaveTimeout); this._autoSaveTimeout = null; }
     this._hasPendingChange = false;
