@@ -148,6 +148,23 @@ window.GitHubSync = {
         branch: this.config.branch
       };
 
+      // 若还没有 sha（初始化读取失败/首次），先查一次文件当前的 sha，
+      // 否则已存在的文件会被 GitHub 当成「新建」而报 422
+      if (!this._sha) {
+        try {
+          const metaResp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/contents/${dataFile}`, {
+            headers: this._headers(),
+            cache: 'no-store'
+          });
+          if (metaResp.ok) {
+            const meta = await metaResp.json();
+            if (meta && meta.sha) this._sha = meta.sha;
+          }
+        } catch (e) {
+          console.warn('获取文件 sha 失败:', e.message);
+        }
+      }
+
       if (this._sha) {
         body.sha = this._sha;
       }
@@ -159,8 +176,10 @@ window.GitHubSync = {
       });
 
       if (!resp.ok) {
-        const err = await resp.json();
-        console.error('推送失败:', err);
+        const err = await resp.json().catch(() => ({}));
+        console.error('推送失败:', resp.status, err.message || '');
+        // 422 多为 sha 冲突：清掉 sha，下次重试会重新获取后覆盖
+        if (resp.status === 422) this._sha = null;
         return false;
       }
 
