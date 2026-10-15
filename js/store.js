@@ -80,6 +80,7 @@ const Store = {
   _serverVersion: 0,
   _syncInProgress: false,
   _autoSaveTimeout: null,
+  _hasPendingChange: false,
   _initialized: false,
 
   // 初始化
@@ -550,8 +551,21 @@ const Store = {
   _schedulePush() {
     if (this._autoSaveTimeout) clearTimeout(this._autoSaveTimeout);
     this._autoSaveTimeout = setTimeout(() => {
+      this._hasPendingChange = false;
       this.syncToGitHub();
-    }, 1000);
+    }, 400);
+    // 标记有未同步的改动，配合页面关闭时的兜底推送
+    this._hasPendingChange = true;
+  },
+
+  // 页面关闭/切后台前，尽量把未同步的改动推上去
+  flushPush() {
+    if (!this._hasPendingChange) return;
+    if (this._autoSaveTimeout) { clearTimeout(this._autoSaveTimeout); this._autoSaveTimeout = null; }
+    this._hasPendingChange = false;
+    // 立即触发一次推送（不在页面关闭时才发，切后台时通常能完成）
+    this._syncInProgress = false;
+    this.syncToGitHub();
   },
 
   saveAll() {
