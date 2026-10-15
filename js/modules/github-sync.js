@@ -58,13 +58,18 @@ window.GitHubSync = {
       }
       text = new TextDecoder('utf-8').decode(bytes);
     } else {
-      // 大文件（encoding=none, content=""）：用 raw 方式读原文
-      const rawResp = await this._fetch(url, {
-        headers: { ...this._headers(), 'Accept': 'application/vnd.github.raw' },
-        cache: noStore ? 'no-store' : 'default'
+      // 大文件（encoding=none）：改用 Git Blobs API 读取（支持到100MB，浏览器实测可靠）
+      const blobResp = await this._fetch(`${apiBase}/repos/${owner}/${repo}/git/blobs/${sha}`, {
+        headers: this._headers()
       });
-      if (!rawResp.ok) throw new Error(`读取原文失败: ${rawResp.status}`);
-      text = await rawResp.text();
+      if (!blobResp.ok) throw new Error(`读取大文件失败: ${blobResp.status}`);
+      const blob = await blobResp.json();
+      const binary = atob((blob.content || '').replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      text = new TextDecoder('utf-8').decode(bytes);
     }
 
     return { sha, data: JSON.parse(text) };
