@@ -145,22 +145,7 @@
       "status": "active"
     }
   ],
-  "travels": [
-    {
-      "location": "VERIFY-1792049298386",
-      "startDate": "2026-10-20",
-      "endDate": "2026-10-22",
-      "itinerary": "验证推送",
-      "photos": [],
-      "cost": 0,
-      "notes": "VERIFY-1792049298386",
-      "tags": [
-        "想去"
-      ],
-      "id": "id_mv97vs9f_yxk7qva9i",
-      "createdAt": "2026-10-15"
-    }
-  ],
+  "travels": [],
   "foods": [
     {
       "name": "1",
@@ -700,7 +685,7 @@
       "createdAt": ""
     }
   ],
-  "_version": 19,
-  "_updatedAt": "2026-10-15T07:28:18.788Z",
-  "_updatedBy": "unknown"
+  "_version": 20,
+  "_updatedAt": "2026-10-15T07:36:23.000Z",
+  "_updatedBy": "cleanup"
 }
