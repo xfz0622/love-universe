@@ -265,23 +265,23 @@ const FoodPage = {
       });
     };
 
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', async () => {
       const files = Array.from(fileInput.files);
       if (files.length === 0) return;
       let photos = JSON.parse(hiddenInput.value);
-      let loaded = 0;
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          photos.push(e.target.result);
-          loaded++;
-          if (loaded === files.length) {
-            hiddenInput.value = JSON.stringify(photos);
-            refreshPhotos();
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      // 压缩后再存，避免数据文件过大
+      for (const file of files) {
+        const compressed = await Utils.compressImage(file, { maxSize: 1280, quality: 0.72 });
+        photos.push(compressed || await new Promise(res => {
+          const r = new FileReader();
+          r.onload = e => res(e.target.result);
+          r.onerror = () => res(null);
+          r.readAsDataURL(file);
+        }));
+      }
+      photos = photos.filter(Boolean);
+      hiddenInput.value = JSON.stringify(photos);
+      refreshPhotos();
       fileInput.value = '';
     });
 
