@@ -145,7 +145,19 @@
       "status": "active"
     }
   ],
-  "travels": [],
+  "travels": [
+    {
+      "location": "ST299083-游",
+      "startDate": "2026-10-16",
+      "endDate": "2026-10-17",
+      "photos": [],
+      "tags": [
+        "想去"
+      ],
+      "id": "id_mvb2kck7_telp4he5w",
+      "createdAt": "2026-10-16"
+    }
+  ],
   "foods": [
     {
       "name": "1",
@@ -210,6 +222,17 @@
       ],
       "id": "id_msgbwfpv_npuxz6sfa",
       "createdAt": "2026-08-06"
+    },
+    {
+      "name": "ST299083-吃",
+      "location": "T",
+      "rating": 5,
+      "photos": [],
+      "date": "2026-10-16",
+      "tags": [],
+      "notes": "",
+      "id": "id_mvb2kcjx_k5zeokr8a",
+      "createdAt": "2026-10-16"
     }
   ],
   "shopping": [
@@ -222,9 +245,28 @@
       "status": "pending",
       "id": "id_ms7bje1m_pirlqfp7u",
       "createdAt": "2026-07-30"
+    },
+    {
+      "name": "ST299083-买",
+      "price": 9,
+      "status": "想买",
+      "date": "2026-10-16",
+      "notes": "",
+      "id": "id_mvb2kck7_1rkf1bqkj",
+      "createdAt": "2026-10-16"
     }
   ],
-  "ledger": [],
+  "ledger": [
+    {
+      "title": "ST299083-账",
+      "amount": 9,
+      "category": "其他",
+      "date": "2026-10-16",
+      "type": "expense",
+      "id": "id_mvb2kck7_r3gbeh12u",
+      "createdAt": "2026-10-16"
+    }
+  ],
   "inspiration": [
     {
       "id": "insp_001",
@@ -683,9 +725,18 @@
         "攻略"
       ],
       "createdAt": ""
+    },
+    {
+      "title": "ST299083-灵",
+      "platform": "T",
+      "url": "",
+      "summary": "",
+      "tags": [],
+      "id": "id_mvb2kck7_qqmbhbksm",
+      "createdAt": "2026-10-16"
     }
   ],
-  "_version": 21,
-  "_updatedAt": "2026-10-16T14:32:20.000Z",
-  "_updatedBy": "slim"
+  "_version": 22,
+  "_updatedAt": "2026-10-16T14:34:59.496Z",
+  "_updatedBy": "unknown"
 }
