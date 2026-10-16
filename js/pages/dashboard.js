@@ -239,6 +239,13 @@ const DashboardPage = {
         <label class="input-label">恋爱宣言</label>
         <textarea class="input" id="form-declaration" placeholder="写下你们的恋爱宣言...">${profile.declaration}</textarea>
       </div>
+      <div class="input-group">
+        <label class="input-label">照片瘦身 <span class="input-hint">清理历史大图，加速同步</span></label>
+        <button type="button" class="btn btn-ghost" id="btn-slim-photos" style="width:100%;font-size:13px">
+          🗜️ 一键压缩所有照片
+        </button>
+        <div id="slim-status" class="text-xs text-muted" style="margin-top:6px"></div>
+      </div>
     `;
 
     Components.showModal('编辑恋爱档案', bodyHTML, (overlay) => {
@@ -259,5 +266,52 @@ const DashboardPage = {
       App.render();
       Utils.showToast('恋爱档案已更新');
     });
+
+    // 绑定「一键压缩照片」
+    const slimBtn = document.querySelector('#btn-slim-photos');
+    if (slimBtn) {
+      slimBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const statusEl = document.querySelector('#slim-status');
+        slimBtn.disabled = true;
+        const beforeSize = JSON.stringify(Store.data).length;
+        let count = 0;
+        const doCompress = async (arr, field) => {
+          for (const item of (arr || [])) {
+            const pics = item[field];
+            if (Array.isArray(pics) && pics.length) {
+              const news = [];
+              for (const p of pics) {
+                const c = await Utils.compressDataURL(p, { maxSize: 1280, quality: 0.72 });
+                if (c && c.length < p.length) count++;
+                news.push(c || p);
+              }
+              item[field] = news;
+            }
+          }
+        };
+        try {
+          await doCompress(Store.data.foods, 'photos');
+          await doCompress(Store.data.travels, 'photos');
+          // 头像也压一下
+          if (Store.data.profile && Store.data.profile.couplePhoto) {
+            const c = await Utils.compressDataURL(Store.data.profile.couplePhoto, { maxSize: 800, quality: 0.75 });
+            if (c && c.length < Store.data.profile.couplePhoto.length) {
+              Store.data.profile.couplePhoto = c; count++;
+            }
+          }
+          const afterSize = JSON.stringify(Store.data).length;
+          Store.saveAll();
+          Store._schedulePush();
+          const savedKB = Math.round((beforeSize - afterSize) / 1024);
+          if (statusEl) statusEl.textContent = `✅ 已压缩 ${count} 张，节省约 ${savedKB} KB（正在同步到仓库…）`;
+          Utils.showToast('照片已压缩，正在同步');
+        } catch (err) {
+          if (statusEl) statusEl.textContent = '❌ 压缩失败：' + err.message;
+        } finally {
+          slimBtn.disabled = false;
+        }
+      });
+    }
   }
 };
