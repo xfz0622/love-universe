@@ -332,6 +332,96 @@ const Utils = {
     contexts.sort((a, b) => (urgencyOrder[a.urgency] || 9) - (urgencyOrder[b.urgency] || 9));
 
     return contexts;
+  },
+
+  // ===== 图片压缩：把上传的图片压到指定尺寸/质量，避免数据文件过大 =====
+  // 返回 dataURL（jpeg/webp）。失败时回退为原图。
+  compressImage(file, opts = {}) {
+    const maxSize = opts.maxSize || 1280;      // 最长边像素
+    const quality = opts.quality || 0.72;      // 质量
+    const mime = opts.mime || 'image/jpeg';
+    return new Promise((resolve) => {
+      try {
+        const reader = new FileReader();
+        reader.onerror = () => resolve(null);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onerror = () => resolve(e.target.result);
+          img.onload = () => {
+            try {
+              let { width, height } = img;
+              if (width > maxSize || height > maxSize) {
+                if (width >= height) {
+                  height = Math.round(height * maxSize / width);
+                  width = maxSize;
+                } else {
+                  width = Math.round(width * maxSize / height);
+                  height = maxSize;
+                }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#fff';
+              ctx.fillRect(0, 0, width, height);
+              ctx.drawImage(img, 0, 0, width, height);
+              const out = canvas.toDataURL(mime, quality);
+              // 若压缩后反而更大（小图），返回原图
+              resolve(out && out.length < e.target.result.length ? out : e.target.result);
+            } catch (err) {
+              resolve(e.target.result);
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  },
+
+  // 压缩已有的 dataURL 图片（用于历史数据一次性瘦身）
+  compressDataURL(dataURL, opts = {}) {
+    const maxSize = opts.maxSize || 1280;
+    const quality = opts.quality || 0.72;
+    const mime = opts.mime || 'image/jpeg';
+    return new Promise((resolve) => {
+      if (!dataURL || typeof dataURL !== 'string' || !dataURL.startsWith('data:image')) {
+        return resolve(dataURL);
+      }
+      // 已经很小的图片（<80KB）不用动
+      if (dataURL.length < 80 * 1024) return resolve(dataURL);
+      try {
+        const img = new Image();
+        img.onerror = () => resolve(dataURL);
+        img.onload = () => {
+          try {
+            let { width, height } = img;
+            if (width > maxSize || height > maxSize) {
+              if (width >= height) {
+                height = Math.round(height * maxSize / width);
+                width = maxSize;
+              } else {
+                width = Math.round(width * maxSize / height);
+                height = maxSize;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            const out = canvas.toDataURL(mime, quality);
+            resolve(out && out.length < dataURL.length ? out : dataURL);
+          } catch (err) { resolve(dataURL); }
+        };
+        img.src = dataURL;
+      } catch (e) { resolve(dataURL); }
+    });
   }
 };
 
