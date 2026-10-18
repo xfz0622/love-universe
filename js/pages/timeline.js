@@ -102,7 +102,10 @@ const TimelinePage = {
                 <div class="card-subtitle">${repeatLabel}重复 · 提前${a.remindDays}天提醒</div>
               </div>
             </div>
-            ${statusTag}
+            <span style="display:flex;align-items:center;gap:4px">
+              ${statusTag}
+              <button class="card-del-trigger" data-del="${a.id}" title="删除">🗑</button>
+            </span>
           </div>
           <div class="card-body">
             <span style="color:var(--color-timeline);font-weight:var(--weight-medium)">${daysText}</span>
@@ -133,11 +136,58 @@ const TimelinePage = {
         const item = Store.getById('anniversaries', id);
         if (item) this._showForm(item);
       });
+      this._bindLongPress(card);
+    });
+
+    // 删单条
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+  },
+
+  // 长按进入多选删除模式
+  _bindLongPress(card) {
+    let timer = null;
+    const start = () => {
+      timer = setTimeout(() => {
+        timer = null;
+        this._enterSelect();
+      }, 600);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    card.addEventListener('touchstart', start, { passive: true });
+    card.addEventListener('touchend', cancel);
+    card.addEventListener('touchmove', cancel);
+    card.addEventListener('touchcancel', cancel);
+    card.addEventListener('mousedown', start);
+    card.addEventListener('mouseup', cancel);
+    card.addEventListener('mouseleave', cancel);
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'anniversaries',
+      label: '纪念日',
+      rerender: () => this.render(this.container)
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('anniversaries', id);
+    if (!item) return;
+    Components.showConfirm('确认删除？', `将删除纪念日「${item.name}」，不可恢复。`, () => {
+      Store.remove('anniversaries', id);
+      this.render(this.container);
+      Utils.showToast('已删除');
     });
   },
 
   _showForm(item = null) {
-    const isEdit = !!item;
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑纪念日' : '添加纪念日';
     const data = item || { name: '', date: '', repeatCycle: 'yearly', remindDays: 7, status: 'active' };
 
@@ -193,5 +243,22 @@ const TimelinePage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条纪念日」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条纪念日';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', `将删除纪念日「${item.name}」，不可恢复。`, () => {
+          Store.remove('anniversaries', item.id);
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
   }
 };

@@ -108,6 +108,7 @@ const ShoppingPage = {
             ${linkBtn}
           </div>
           <span class="tag ${st.cls}">${st.label}</span>
+          <button class="card-del-trigger" data-del="${s.id}" title="删除" style="align-self:flex-start">🗑</button>
         </div>
       `;
     }).join('');
@@ -183,11 +184,58 @@ const ShoppingPage = {
         const data = Store.getById('shopping', item.dataset.id);
         if (data) this._showForm(data);
       });
+      this._bindLongPress(item);
+    });
+
+    // 删单条
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+  },
+
+  // 长按进入多选删除模式
+  _bindLongPress(card) {
+    let timer = null;
+    const start = () => {
+      timer = setTimeout(() => {
+        timer = null;
+        this._enterSelect();
+      }, 600);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    card.addEventListener('touchstart', start, { passive: true });
+    card.addEventListener('touchend', cancel);
+    card.addEventListener('touchmove', cancel);
+    card.addEventListener('touchcancel', cancel);
+    card.addEventListener('mousedown', start);
+    card.addEventListener('mouseup', cancel);
+    card.addEventListener('mouseleave', cancel);
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'shopping',
+      label: '待办',
+      rerender: () => this.render(this.container)
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('shopping', id);
+    if (!item) return;
+    Components.showConfirm('确认删除？', `将删除待办「${item.name}」，不可恢复。`, () => {
+      Store.remove('shopping', id);
+      this.render(this.container);
+      Utils.showToast('已删除');
     });
   },
 
   _showForm(item = null) {
-    const isEdit = !!item;
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑待办' : '添加待办';
     const data = item || {
       name: '', purpose: '', budget: 0, link: '', deadline: '', status: 'pending'
@@ -249,5 +297,22 @@ const ShoppingPage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条待办」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条待办';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', `将删除待办「${item.name}」，不可恢复。`, () => {
+          Store.remove('shopping', item.id);
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
   }
 };

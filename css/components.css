@@ -568,3 +568,174 @@ select.input {
   border-color: var(--primary, #ff6b81);
   color: var(--primary, #ff6b81);
 }
+
+/* ===== 通用多选删除 ===== */
+.select-mode [data-id].selectable {
+  position: relative;
+  cursor: pointer;
+}
+
+.select-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color, #d8d3cb);
+  background: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: all .15s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.select-mode .select-check { display: flex; }
+
+.select-mode [data-id].selected .select-check {
+  background: var(--color-primary, #1A1A1A);
+  border-color: var(--color-primary, #1A1A1A);
+}
+
+.select-mode [data-id].selected .select-check::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.select-mode [data-id].selected {
+  outline: 2px solid var(--color-primary, #1A1A1A);
+  outline-offset: -2px;
+  opacity: .96;
+}
+
+/* 卡片右上角的「删除」入口 */
+.card-del-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #999);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+.card-del-trigger:active { background: var(--color-primary-ghost, #f5f5f5); }
+
+/* 底部批量操作条 */
+.select-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-full, 9999px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.16);
+  z-index: 900;
+  animation: selectBarIn .18s ease;
+}
+
+@keyframes selectBarIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.select-bar-btn {
+  border: 1px solid var(--border-color, #e5e0d8);
+  background: #fff;
+  color: var(--text-primary, #1A1A1A);
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: var(--radius-full, 9999px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+
+.select-bar-btn:active { background: var(--color-primary-ghost, #f5f5f5); }
+
+.select-bar-danger {
+  background: var(--color-primary, #1A1A1A);
+  border-color: var(--color-primary, #1A1A1A);
+  color: #fff;
+  font-weight: 600;
+}
+
+.select-bar-danger:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+/* 编辑弹窗底部删除按钮 */
+.modal-delete-btn {
+  margin-right: auto;
+  color: var(--color-danger, #333);
+  font-size: 13px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  cursor: pointer;
+  opacity: .75;
+}
+.modal-delete-btn:active { opacity: 1; }
+
+/* ===== 照片墙（可单选删除） ===== */
+.photo-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm, 8px);
+  overflow: hidden;
+  background: var(--color-primary-ghost, #f5f5f5);
+  border: 1px solid var(--border-light, #eee);
+}
+
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-thumb-x {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}

@@ -131,6 +131,7 @@ const LedgerPage = {
             <div class="list-item-amount">${Utils.formatMoney(l.amount)}</div>
             <div class="list-item-date">${l.category}</div>
           </div>
+          <button class="card-del-trigger" data-del="${l.id}" title="删除">🗑</button>
         </div>
       `;
     }).join('');
@@ -222,11 +223,58 @@ const LedgerPage = {
         const data = Store.getById('ledger', item.dataset.id);
         if (data) this._showForm(data);
       });
+      this._bindLongPress(item);
+    });
+
+    // 删单条
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+  },
+
+  // 长按进入多选删除模式
+  _bindLongPress(card) {
+    let timer = null;
+    const start = () => {
+      timer = setTimeout(() => {
+        timer = null;
+        this._enterSelect();
+      }, 600);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    card.addEventListener('touchstart', start, { passive: true });
+    card.addEventListener('touchend', cancel);
+    card.addEventListener('touchmove', cancel);
+    card.addEventListener('touchcancel', cancel);
+    card.addEventListener('mousedown', start);
+    card.addEventListener('mouseup', cancel);
+    card.addEventListener('mouseleave', cancel);
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'ledger',
+      label: '账目',
+      rerender: () => this.render(this.container)
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('ledger', id);
+    if (!item) return;
+    Components.showConfirm('确认删除？', `将删除「${item.category} ${Utils.formatMoney(item.amount)}」这笔记录，不可恢复。`, () => {
+      Store.remove('ledger', id);
+      this.render(this.container);
+      Utils.showToast('已删除');
     });
   },
 
   _showForm(item = null) {
-    const isEdit = !!item;
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑账目' : '添加账目';
     const data = item || {
       date: Utils.getToday(), category: '美食', amount: 0, payer: '他', relatedTravel: '', receipt: ''
@@ -308,6 +356,23 @@ const LedgerPage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条账目」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条账目';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', `将删除「${item.category}」这笔记录，不可恢复。`, () => {
+          Store.remove('ledger', item.id);
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
 
     // 绑定收据上传和删除
     const fileInput = document.querySelector('#receipt-file-input');

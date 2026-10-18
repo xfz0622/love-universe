@@ -98,7 +98,10 @@ const TravelPage = {
             <div class="flex-1" style="min-width:0">
               <div class="flex items-center justify-between mb-sm">
                 <span class="font-medium" style="font-size:var(--text-md)">${t.location}</span>
-                <span style="font-size:var(--text-xs);color:var(--text-muted)">${Utils.formatDateShort(t.startDate)}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:var(--text-xs);color:var(--text-muted)">${Utils.formatDateShort(t.startDate)}</span>
+                  <button class="card-del-trigger" data-del="${t.id}" title="删除">🗑</button>
+                </span>
               </div>
               <div class="text-xs text-secondary mb-sm">
                 ${t.startDate} ~ ${t.endDate}
@@ -109,11 +112,24 @@ const TravelPage = {
               </div>
               ${t.notes ? `<div class="text-xs text-muted mt-sm" style="line-height:1.5">${t.notes.substring(0, 60)}${t.notes.length > 60 ? '...' : ''}</div>` : ''}
               ${photos.length > 1 ? `<div class="text-xs text-muted mt-sm">📷 ${photos.length}张照片</div>` : ''}
+              ${this._renderPhotoStrip(t, photos)}
             </div>
           </div>
         </div>
       `;
     }).join('');
+  },
+
+  // 卡片内照片墙：每张照片可单独删除
+  _renderPhotoStrip(t, photos) {
+    if (!photos || photos.length === 0) return '';
+    const thumbs = photos.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p}" alt="照片${i + 1}" loading="lazy" onerror="this.style.display='none'">
+        <button class="photo-thumb-x" data-item="${t.id}" data-idx="${i}">×</button>
+      </div>
+    `).join('');
+    return `<div class="photo-strip mt-sm">${thumbs}</div>`;
   },
 
   _bindEvents() {
@@ -133,12 +149,80 @@ const TravelPage = {
       aiBtn.addEventListener('click', () => TravelAI.open());
     }
 
+    // 删单条（卡片右上角 🗑）
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+
+    // 删单张照片
+    this.container.querySelectorAll('.photo-thumb-x').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deletePhoto(btn.dataset.item, parseInt(btn.dataset.idx));
+      });
+    });
+
     this.container.querySelectorAll('.card[data-id]').forEach(card => {
       card.addEventListener('click', () => {
         const item = Store.getById('travels', card.dataset.id);
         if (item) this._showForm(item);
       });
+
+      // 长按进入多选模式
+      this._bindLongPress(card);
     });
+  },
+
+  // 长按卡片（600ms）进入多选删除模式
+  _bindLongPress(card) {
+    let timer = null;
+    const start = () => {
+      timer = setTimeout(() => {
+        timer = null;
+        this._enterSelect();
+      }, 600);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    card.addEventListener('touchstart', start, { passive: true });
+    card.addEventListener('touchend', cancel);
+    card.addEventListener('touchmove', cancel);
+    card.addEventListener('touchcancel', cancel);
+    card.addEventListener('mousedown', start);
+    card.addEventListener('mouseup', cancel);
+    card.addEventListener('mouseleave', cancel);
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'travels',
+      label: '旅行记录',
+      rerender: () => this.render(this.container)
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('travels', id);
+    if (!item) return;
+    Components.showConfirm('确认删除？', `将删除「${item.location}」这次旅行及其照片，不可恢复。`, () => {
+      Store.remove('travels', id);
+      this.render(this.container);
+      Utils.showToast('已删除');
+    });
+  },
+
+  _deletePhoto(id, idx) {
+    const item = Store.getById('travels', id);
+    if (!item) return;
+    const photos = [...(item.photos || [])];
+    if (idx < 0 || idx >= photos.length) return;
+    photos.splice(idx, 1);
+    Store.update('travels', id, { photos });
+    this.render(this.container);
+    Utils.showToast('照片已删除');
   },
 
   _showForm(item = null) {
@@ -247,6 +331,23 @@ const TravelPage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条记录」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条记录';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', `将删除「${item.location}」这次旅行及其照片，不可恢复。`, () => {
+          Store.remove('travels', item.id);
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
 
     // 绑定照片上传
     const fileInput = document.querySelector('#photo-file-input');

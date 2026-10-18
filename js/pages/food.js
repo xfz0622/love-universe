@@ -83,7 +83,10 @@ const FoodPage = {
             <div class="flex-1" style="min-width:0">
               <div class="flex items-center justify-between mb-xs">
                 <span class="font-medium" style="font-size:var(--text-md)">${f.name}</span>
-                <span class="font-semibold text-sm">${Utils.formatMoney(f.cost)}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span class="font-semibold text-sm">${Utils.formatMoney(f.cost)}</span>
+                  <button class="card-del-trigger" data-del="${f.id}" title="删除">🗑</button>
+                </span>
               </div>
               <div class="text-xs text-secondary mb-xs">${f.cuisine} · ${f.address}</div>
               <div style="font-size:var(--text-sm);color:var(--text-primary);margin-bottom:4px">${stars}</div>
@@ -93,11 +96,24 @@ const FoodPage = {
                 <span class="text-xs text-muted">${Utils.formatDateShort(f.date)}</span>
               </div>
               ${photos.length > 1 ? `<div class="text-xs text-muted mt-xs">📷 ${photos.length}张照片</div>` : ''}
+              ${this._renderPhotoStrip(f, photos)}
             </div>
           </div>
         </div>
       `;
     }).join('');
+  },
+
+  // 卡片内照片墙：每张照片可单独删除
+  _renderPhotoStrip(f, photos) {
+    if (!photos || photos.length === 0) return '';
+    const thumbs = photos.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p}" alt="照片${i + 1}" loading="lazy" onerror="this.style.display='none'">
+        <button class="photo-thumb-x" data-photo-del="1" data-item="${f.id}" data-idx="${i}">×</button>
+      </div>
+    `).join('');
+    return `<div class="photo-strip mt-sm">${thumbs}</div>`;
   },
 
   _bindEvents() {
@@ -112,16 +128,84 @@ const FoodPage = {
       this._showForm();
     });
 
+    // 删单条（卡片右上角 🗑）
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+
+    // 删单张照片
+    this.container.querySelectorAll('.photo-thumb-x').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deletePhoto(btn.dataset.item, parseInt(btn.dataset.idx));
+      });
+    });
+
     this.container.querySelectorAll('.card[data-id]').forEach(card => {
       card.addEventListener('click', () => {
         const item = Store.getById('foods', card.dataset.id);
         if (item) this._showForm(item);
       });
+
+      // 长按进入多选模式
+      this._bindLongPress(card);
     });
   },
 
+  // 长按卡片（600ms）进入多选删除模式
+  _bindLongPress(card) {
+    let timer = null;
+    const start = () => {
+      timer = setTimeout(() => {
+        timer = null;
+        this._enterSelect();
+      }, 600);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    card.addEventListener('touchstart', start, { passive: true });
+    card.addEventListener('touchend', cancel);
+    card.addEventListener('touchmove', cancel);
+    card.addEventListener('touchcancel', cancel);
+    card.addEventListener('mousedown', start);
+    card.addEventListener('mouseup', cancel);
+    card.addEventListener('mouseleave', cancel);
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'foods',
+      label: '美食记录',
+      rerender: () => this.render(this.container)
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('foods', id);
+    if (!item) return;
+    Components.showConfirm('确认删除？', `将删除「${item.name}」及其照片，不可恢复。`, () => {
+      Store.remove('foods', id);
+      this.render(this.container);
+      Utils.showToast('已删除');
+    });
+  },
+
+  _deletePhoto(id, idx) {
+    const item = Store.getById('foods', id);
+    if (!item) return;
+    const photos = [...(item.photos || [])];
+    if (idx < 0 || idx >= photos.length) return;
+    photos.splice(idx, 1);
+    Store.update('foods', id, { photos });
+    this.render(this.container);
+    Utils.showToast('照片已删除');
+  },
+
   _showForm(item = null) {
-    const isEdit = !!item;
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑美食记录' : '添加美食记录';
     const data = item || {
       name: '', address: '', date: '', cuisine: '',
@@ -240,6 +324,23 @@ const FoodPage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条记录」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条记录';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', `将删除「${item.name}」及其照片，不可恢复。`, () => {
+          Store.remove('foods', item.id);
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
 
     // 绑定照片上传
     const fileInput = document.querySelector('#photo-file-input');

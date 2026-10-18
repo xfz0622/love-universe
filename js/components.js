@@ -424,6 +424,117 @@ const Components = {
     });
   },
 
+  /* ===== 通用多选删除组件 =====
+   * 用法：
+   *   Components.enterSelectMode({
+   *     container,            // 页面容器
+   *     collection: 'foods',  // Store 集合名
+   *     getItems: () => [...],// 当前显示的条目（用于「全选」）
+   *     rerender: () => {},   // 删除后重新渲染页面
+   *     accent: 'var(--text-primary)'
+   *   })
+   * 页面卡片需带 data-id 与 .select-check 元素，即可自动支持多选。
+   */
+  enterSelectMode(opts) {
+    const container = opts.container;
+    if (!container) return;
+
+    // 避免重复进入
+    if (container.querySelector('.select-bar')) return;
+
+    container.classList.add('select-mode');
+
+    // 为所有卡片插入勾选圈
+    const cards = container.querySelectorAll('[data-id]');
+    cards.forEach(card => {
+      card.classList.add('selectable');
+      if (!card.querySelector(':scope > .select-check')) {
+        const box = document.createElement('span');
+        box.className = 'select-check';
+        card.appendChild(box);
+        box.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          card.classList.toggle('selected');
+          updateBar();
+        });
+      }
+      // 多选模式下点击卡片 = 切换选中，而不是进入编辑
+      card._selectGuard = (e) => {
+        if (!container.classList.contains('select-mode')) return;
+        if (e.target.closest('.select-check')) return;
+        e.stopPropagation();
+        e.preventDefault();
+        card.classList.toggle('selected');
+        updateBar();
+      };
+      card.addEventListener('click', card._selectGuard, true);
+    });
+
+    // 底部操作条
+    const bar = document.createElement('div');
+    bar.className = 'select-bar';
+    bar.innerHTML = `
+      <button class="select-bar-btn" data-act="cancel">取消</button>
+      <button class="select-bar-btn" data-act="all">全选</button>
+      <button class="select-bar-btn select-bar-danger" data-act="delete" disabled>删除 (0)</button>
+    `;
+    document.body.appendChild(bar);
+
+    const delBtn = bar.querySelector('[data-act="delete"]');
+
+    function selectedIds() {
+      return Array.from(container.querySelectorAll('[data-id].selected'))
+        .map(el => el.dataset.id);
+    }
+
+    function updateBar() {
+      const n = selectedIds().length;
+      delBtn.textContent = `删除 (${n})`;
+      delBtn.disabled = n === 0;
+    }
+
+    const exit = () => {
+      container.classList.remove('select-mode');
+      container.querySelectorAll('[data-id]').forEach(card => {
+        card.classList.remove('selected');
+        if (card._selectGuard) {
+          card.removeEventListener('click', card._selectGuard, true);
+          card._selectGuard = null;
+        }
+      });
+      bar.remove();
+      if (typeof opts.onExit === 'function') opts.onExit();
+    };
+
+    bar.querySelector('[data-act="cancel"]').addEventListener('click', exit);
+
+    bar.querySelector('[data-act="all"]').addEventListener('click', () => {
+      const all = container.querySelectorAll('[data-id]');
+      const isAll = selectedIds().length === all.length;
+      all.forEach(card => card.classList.toggle('selected', !isAll));
+      updateBar();
+    });
+
+    delBtn.addEventListener('click', () => {
+      const ids = selectedIds();
+      if (ids.length === 0) return;
+      const label = opts.label || '条目';
+      Components.showConfirm(
+        `删除 ${ids.length} 个${label}？`,
+        '删除后不可恢复，并会同步到云端仓库。',
+        () => {
+          const n = Store.removeMany(opts.collection, ids);
+          exit();
+          if (typeof opts.rerender === 'function') opts.rerender();
+          Utils.showToast(`已删除 ${n} 个${label}`);
+        }
+      );
+    });
+
+    updateBar();
+  },
+
   /**
    * 图片裁剪器 - 微信风格：先预览完整照片，可选进入裁剪模式
    * @param {File} file - 图片文件

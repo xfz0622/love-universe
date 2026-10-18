@@ -130,6 +130,7 @@ const InspirationPage = {
             </div>
             <p class="page-header-subtitle">素材池${total}条 · 今日精选${dailyCount}条 · ${todayLabel}</p>
           </div>
+          ${total > 0 ? '<button class="tai-entry-btn" id="batch-del-inspiration" style="flex-shrink:0">🗑 批量删除</button>' : ''}
         </div>
       </div>
     `;
@@ -279,7 +280,10 @@ const InspirationPage = {
               <span style="font-size:1.2rem">${platformIcon}</span>
               <span class="card-subtitle">${item.platform}</span>
             </div>
-            <span class="text-xs text-muted">${Utils.formatDateShort(item.createdAt)}</span>
+            <span style="display:flex;align-items:center;gap:4px">
+              <span class="text-xs text-muted">${Utils.formatDateShort(item.createdAt)}</span>
+              <button class="card-del-trigger" data-del="${item.id}" title="删除">🗑</button>
+            </span>
           </div>
           <div class="card-body">${item.summary}</div>
           <div class="card-footer">
@@ -325,12 +329,51 @@ const InspirationPage = {
       let longPressTimer;
       card.addEventListener('touchstart', () => {
         longPressTimer = setTimeout(() => {
+          if (this.container.classList.contains('select-mode')) return;
           const item = Store.getById('inspiration', card.dataset.id);
           if (item) this._showForm(item);
         }, 600);
       });
       card.addEventListener('touchend', () => clearTimeout(longPressTimer));
       card.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+    });
+
+    // 删单条
+    this.container.querySelectorAll('.card-del-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteOne(btn.dataset.del);
+      });
+    });
+
+    // 顶部「批量删除」入口
+    const batchBtn = this.container.querySelector('#batch-del-inspiration');
+    if (batchBtn) {
+      batchBtn.addEventListener('click', () => this._enterSelect());
+    }
+  },
+
+  _enterSelect() {
+    Components.enterSelectMode({
+      container: this.container,
+      collection: 'inspiration',
+      label: '灵感',
+      rerender: () => {
+        this._dailyItems = null;   // 精选缓存失效，重新计算
+        this.render(this.container);
+      }
+    });
+  },
+
+  _deleteOne(id) {
+    const item = Store.getById('inspiration', id);
+    if (!item) return;
+    const brief = (item.summary || '').substring(0, 20);
+    Components.showConfirm('确认删除？', `将删除灵感「${brief}${item.summary && item.summary.length > 20 ? '...' : ''}」，不可恢复。`, () => {
+      Store.remove('inspiration', id);
+      this._dailyItems = null;
+      this.render(this.container);
+      Utils.showToast('已删除');
     });
   },
 
@@ -421,7 +464,7 @@ const InspirationPage = {
   },
 
   _showForm(item = null) {
-    const isEdit = !!item;
+    const isEdit = !!(item && item.id);
     const title = isEdit ? '编辑灵感' : '添加灵感';
     const data = item || {
       platform: '小红书', url: '', screenshot: '', summary: '', tags: [], createdAt: Utils.getToday()
@@ -484,5 +527,23 @@ const InspirationPage = {
       this.render(this.container);
       Utils.showToast(isEdit ? '已更新' : '已添加');
     });
+
+    // 编辑态：底部左侧增加「删除这条灵感」
+    if (isEdit) {
+      const footer = overlay.querySelector('.modal-footer');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'modal-delete-btn';
+      delBtn.textContent = '🗑 删除这条灵感';
+      footer.insertBefore(delBtn, footer.firstChild);
+      delBtn.addEventListener('click', () => {
+        Components.showConfirm('确认删除？', '删除后不可恢复，并会同步到云端仓库。', () => {
+          Store.remove('inspiration', item.id);
+          this._dailyItems = null;
+          overlay.remove();
+          this.render(this.container);
+          Utils.showToast('已删除');
+        });
+      });
+    }
   }
 };

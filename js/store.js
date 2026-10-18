@@ -645,6 +645,20 @@ const Store = {
     return true;
   },
 
+  // 批量删除（只触发一次推送，避免多次请求覆盖）
+  removeMany(collection, ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return 0;
+    const idSet = new Set(ids);
+    const before = this.data[collection].length;
+    this.data[collection] = this.data[collection].filter(i => !idSet.has(i.id));
+    const removed = before - this.data[collection].length;
+    if (removed > 0) {
+      this.saveCollection(collection);
+      this._schedulePush();
+    }
+    return removed;
+  },
+
   getById(collection, id) {
     return this.data[collection].find(i => i.id === id) || null;
   },
